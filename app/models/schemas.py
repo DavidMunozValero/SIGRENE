@@ -4,7 +4,7 @@ This module contains the data validation models for the daily records,
 morning wellness, and external training loads of elite swimmers.
 """
 
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
 
@@ -32,6 +32,25 @@ class RegistroManana(BaseModel):
     )
 
 
+class EstilosNado(BaseModel):
+    """Volume breakdown by swimming stroke/style.
+
+    Attributes:
+        libre (int): Freestyle distance in meters.
+        espalda (int): Backstroke distance in meters.
+        braza (int): Breaststroke distance in meters.
+        mariposa (int): Butterfly distance in meters.
+        combinado (int): Individual medley distance in meters.
+        otros (int): Other styles distance in meters.
+    """
+    libre: int = Field(default=0, ge=0, description="Crol/Libre (metros)")
+    espalda: int = Field(default=0, ge=0, description="Espalda (metros)")
+    braza: int = Field(default=0, ge=0, description="Braza (metros)")
+    mariposa: int = Field(default=0, ge=0, description="Mariposa (metros)")
+    combinado: int = Field(default=0, ge=0, description="Combinado (metros)")
+    otros: int = Field(default=0, ge=0, description="Otros estilos (metros)")
+
+
 class SesionEntrenamiento(BaseModel):
     """Training session data and external load metrics.
 
@@ -40,6 +59,7 @@ class SesionEntrenamiento(BaseModel):
         tiempo_sesion_minutos (int): Total duration of the session in minutes.
         rpe (int): Rating of Perceived Exertion on a scale from 1 to 10.
         video_tecnica_uri (Optional[str]): SeaweedFS URI for technique analysis video.
+        estilos (Optional[EstilosNado]): Volume breakdown by swimming stroke.
     """
     volumen_metros: int = Field(
         ..., ge=0, description="Metros totales de la sesión"
@@ -52,6 +72,9 @@ class SesionEntrenamiento(BaseModel):
     )
     video_tecnica_uri: Optional[str] = Field(
         default=None, description="URI del vídeo en SeaweedFS"
+    )
+    estilos: Optional[EstilosNado] = Field(
+        default=None, description="Desglose por estilos de nado"
     )
 
 
@@ -123,3 +146,71 @@ class Token(BaseModel):
     """
     access_token: str = Field(..., description="Token JWT generado")
     token_type: str = Field(..., description="Tipo de token (ej. bearer)")
+
+
+class RegistroDiarioResponse(BaseModel):
+    """Schema for returning a daily record from the database.
+
+    Attributes:
+        id (str): MongoDB document ID.
+        nadador_id (str): Pseudonymized identifier for the swimmer.
+        fecha (date): Date of the record.
+        entrenador_id (str): Identifier of the coach who registered the data.
+        registro_manana (Optional[RegistroManana]): Morning wellness data.
+        sesion_entrenamiento (Optional[SesionEntrenamiento]): Training session data.
+        created_at (Optional[datetime]): Timestamp when the record was created.
+    """
+    id: str = Field(..., description="ID del documento en MongoDB")
+    nadador_id: str = Field(..., description="ID seudonimizado del atleta")
+    fecha: date = Field(..., description="Fecha del registro")
+    entrenador_id: str = Field(..., description="ID del entrenador que registra")
+    registro_manana: Optional[RegistroManana] = None
+    sesion_entrenamiento: Optional[SesionEntrenamiento] = None
+    created_at: Optional[datetime] = Field(default=None, description="Fecha de creación del registro")
+
+    class Config:
+        populate_by_name = True
+
+
+class RegistroDiarioListResponse(BaseModel):
+    """Schema for paginated list of daily records.
+
+    Attributes:
+        total (int): Total number of records matching the query.
+        skip (int): Number of records skipped.
+        limit (int): Maximum number of records to return.
+        registros (List[RegistroDiarioResponse]): List of daily records.
+    """
+    total: int = Field(..., description="Total de registros encontrados")
+    skip: int = Field(..., description="Registros omitidos")
+    limit: int = Field(..., description="Límite de registros devueltos")
+    registros: List[RegistroDiarioResponse] = Field(default_factory=list, description="Lista de registros diarios")
+
+
+class DashboardStats(BaseModel):
+    """Aggregated statistics for the dashboard.
+
+    Attributes:
+        total_sesiones (int): Total number of training sessions.
+        volumen_total (int): Total swimming volume in meters.
+        duracion_total (int): Total training duration in minutes.
+        volumen_semanal (int): Weekly swimming volume.
+        sesiones_semanales (int): Number of sessions this week.
+        rpe_promedio (float): Average RPE across all sessions.
+        densidad_promedio (float): Average density across sessions.
+        srpe_promedio (float): Average sRPE across sessions.
+        estilos_totales (EstilosNado): Aggregated volume by style.
+        volumen_por_dia (List[dict]): Daily volume data for chart.
+        actividad_mensual (List[dict]): Monthly activity calendar data.
+    """
+    total_sesiones: int = Field(0, description="Total de sesiones")
+    volumen_total: int = Field(0, description="Volumen total (metros)")
+    duracion_total: int = Field(0, description="Duración total (minutos)")
+    volumen_semanal: int = Field(0, description="Volumen semanal")
+    sesiones_semanales: int = Field(0, description="Sesiones semanales")
+    rpe_promedio: float = Field(0.0, description="RPE promedio")
+    densidad_promedio: float = Field(0.0, description="Densidad promedio")
+    srpe_promedio: float = Field(0.0, description="sRPE promedio")
+    estilos_totales: EstilosNado = Field(default_factory=EstilosNado, description="Volumen por estilo")
+    volumen_por_dia: List[dict] = Field(default_factory=list, description="Volumen por día")
+    actividad_mensual: List[dict] = Field(default_factory=list, description="Actividad mensual")
