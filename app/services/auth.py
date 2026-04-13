@@ -114,3 +114,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
 
     except InvalidTokenError:
         raise credentials_exception
+
+
+def decode_token(token: str) -> dict:
+    """Decodes a JWT token without requiring authentication.
+
+    Args:
+        token (str): The JWT token to decode.
+
+    Returns:
+        dict: The decoded payload.
+
+    Raises:
+        InvalidTokenError: If the token is invalid or expired.
+    """
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return payload
