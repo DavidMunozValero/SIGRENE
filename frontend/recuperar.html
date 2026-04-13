@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGRENE - Recuperar contraseña</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="auth-card">
+        <div class="card">
+            <div class="logo">
+                <h1>SIGRENE</h1>
+                <p>Recuperar contraseña</p>
+            </div>
+            
+            <div id="alert-container"></div>
+            
+            <div id="step-1">
+                <p class="mb-2" style="color: var(--text-secondary); font-size: 0.875rem;">
+                    Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecer tu contraseña.
+                </p>
+                
+                <form id="recovery-form">
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" class="form-control" 
+                               placeholder="tu@email.com" required autocomplete="email">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+                        Enviar instrucciones
+                    </button>
+                </form>
+            </div>
+            
+            <div id="step-2" class="hidden">
+                <div class="alert alert-success">
+                    <p><strong>¡Correo enviado!</strong></p>
+                    <p class="mt-1">Hemos enviado las instrucciones de recuperación a tu correo electrónico.</p>
+                </div>
+                <p class="text-center mt-2">
+                    <a href="index.html">Volver al inicio de sesión</a>
+                </p>
+            </div>
+
+            <div id="step-3" class="hidden">
+                <form id="reset-form">
+                    <p class="mb-2" style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Ingresa tu nueva contraseña.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="password">Nueva contraseña</label>
+                        <input type="password" id="password" name="password" class="form-control" 
+                               placeholder="Mínimo 8 caracteres" required minlength="8">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Confirmar contraseña</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" 
+                               placeholder="Repite la nueva contraseña" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block" id="reset-btn">
+                        Restablecer contraseña
+                    </button>
+                </form>
+            </div>
+            
+            <div class="auth-footer">
+                <p>¿Recordaste tu contraseña? <a href="index.html">Inicia sesión</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            const step3 = document.getElementById('step-3');
+
+            if (token) {
+                step1.classList.add('hidden');
+                step2.classList.add('hidden');
+                step3.classList.remove('hidden');
+                
+                const resetForm = document.getElementById('reset-form');
+                const resetBtn = document.getElementById('reset-btn');
+
+                resetForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirm_password').value;
+
+                    if (password !== confirmPassword) {
+                        showAlert('Las contraseñas no coinciden');
+                        return;
+                    }
+
+                    if (password.length < 8) {
+                        showAlert('La contraseña debe tener al menos 8 caracteres');
+                        return;
+                    }
+
+                    setLoading(resetBtn, true);
+
+                    try {
+                        await api.resetPassword(token, password);
+                        showAlert('Contraseña actualizada correctamente', 'success', 'alert-container');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    } catch (error) {
+                        showAlert(error.message);
+                    } finally {
+                        setLoading(resetBtn, false);
+                    }
+                });
+            } else {
+                const recoveryForm = document.getElementById('recovery-form');
+                const submitBtn = document.getElementById('submit-btn');
+
+                recoveryForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('email').value.trim();
+
+                    if (!email) {
+                        showAlert('Por favor, ingresa tu correo electrónico');
+                        return;
+                    }
+
+                    setLoading(submitBtn, true);
+
+                    try {
+                        await api.requestPasswordRecovery(email);
+                        step1.classList.add('hidden');
+                        step2.classList.remove('hidden');
+                    } catch (error) {
+                        showAlert(error.message);
+                    } finally {
+                        setLoading(submitBtn, false);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
