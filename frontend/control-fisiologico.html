@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGRENE - Control Fisiológico</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="page-header">
+        <div class="container">
+            <a href="dashboard.html" class="nav-brand">SIGRENE</a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="entrenamiento.html" class="nav-link">Registrar</a>
+                <a href="nadadores.html" class="nav-link">Nadadores</a>
+                <a href="control-fisiologico.html" class="nav-link active">Controles</a>
+                <a href="composicion-corporal.html" class="nav-link">Composición</a>
+                <a href="analisis-competicion.html" class="nav-link">Competición</a>
+            </nav>
+            <div class="user-menu">
+                <span class="user-name" id="user-name">Usuario</span>
+                <button class="btn btn-danger btn-sm" id="logout-btn">Cerrar sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container container-md">
+            <h1 class="page-title">Control Fisiológico y Neuromuscular</h1>
+            
+            <div id="alert-container"></div>
+            
+            <div class="card">
+                <form id="control-form">
+                    <input type="hidden" id="edit-id" value="">
+                    
+                    <h3 class="mb-2">Datos generales</h3>
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label for="nadador_id">Nadador</label>
+                            <select id="nadador_id" name="nadador_id" class="form-control" required>
+                                <option value="">Seleccionar nadador...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fecha">Fecha del control</label>
+                            <input type="date" id="fecha" name="fecha" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h3 class="mb-2">HRV (Variabilidad Frecuencia Cardíaca)</h3>
+                    <p class="mb-2" style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Marcador de recuperación. Requiere dispositivo específico.
+                    </p>
+                    
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label for="hrv_rmssd">RMSSD (ms)</label>
+                            <input type="number" id="hrv_rmssd" name="hrv_rmssd" class="form-control" 
+                                   placeholder="45" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="hrv_sdnn">SDNN (ms)</label>
+                            <input type="number" id="hrv_sdnn" name="hrv_sdnn" class="form-control" 
+                                   placeholder="60" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="hrv_fc_reposo">FC reposo (ppm)</label>
+                            <input type="number" id="hrv_fc_reposo" name="hrv_fc_reposo" class="form-control" 
+                                   placeholder="55">
+                        </div>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h3 class="mb-2">CMJ (Counter Movement Jump)</h3>
+                    <p class="mb-2" style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Fuerza explosiva del tren inferior. Plataforma de contacto.
+                    </p>
+                    
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label for="cmj_altura_cm">Altura salto (cm)</label>
+                            <input type="number" id="cmj_altura_cm" name="cmj_altura_cm" class="form-control" 
+                                   placeholder="35" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="cmj_tiempo_contacto_ms">Tiempo contacto (ms)</label>
+                            <input type="number" id="cmj_tiempo_contacto_ms" name="cmj_tiempo_contacto_ms" class="form-control" 
+                                   placeholder="250" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="cmj_potencia_wkg">Potencia (W/kg)</label>
+                            <input type="number" id="cmj_potencia_wkg" name="cmj_potencia_wkg" class="form-control" 
+                                   placeholder="40" step="0.1">
+                        </div>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h3 class="mb-2">Dominadas</h3>
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label for="dominadas_num">Número de dominadas</label>
+                            <input type="number" id="dominadas_num" name="dominadas_num" class="form-control" 
+                                   placeholder="10" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="dominadas_kg_extra">KG extra añadidos</label>
+                            <input type="number" id="dominadas_kg_extra" name="dominadas_kg_extra" class="form-control" 
+                                   placeholder="0" step="0.5">
+                        </div>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h3 class="mb-2">Test de Lactato</h3>
+                    <p class="mb-2" style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Requiere extracción de sangre. Solo en laboratorio/clínica.
+                    </p>
+                    
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label for="lactato_4mmol_velocidad">V4 (m/s)</label>
+                            <input type="number" id="lactato_4mmol_velocidad" name="lactato_4mmol_velocidad" class="form-control" 
+                                   placeholder="1.2" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="lactato_concentracion_mmol">Concentración (mmol/L)</label>
+                            <input type="number" id="lactato_concentracion_mmol" name="lactato_concentracion_mmol" class="form-control" 
+                                   placeholder="4.0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="lactato_zona_test">Zona test</label>
+                            <input type="text" id="lactato_zona_test" name="lactato_zona_test" class="form-control" 
+                                   placeholder="Ej: 4x100m @90%">
+                        </div>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h3 class="mb-2">Hormonas</h3>
+                    
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label for="cortisol_ugdl">Cortisol (µg/dL)</label>
+                            <input type="number" id="cortisol_ugdl" name="cortisol_ugdl" class="form-control" 
+                                   placeholder="15" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="testosterona_ngdl">Testosterona (ng/dL)</label>
+                            <input type="number" id="testosterona_ngdl" name="testosterona_ngdl" class="form-control" 
+                                   placeholder="600" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="ratio_cortisol_testo">Ratio C/T</label>
+                            <input type="number" id="ratio_cortisol_testo" name="ratio_cortisol_testo" class="form-control" 
+                                   placeholder="Calculado automáticamente" step="0.001" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="annotaciones">Anotaciones</label>
+                        <textarea id="annotaciones" name="annotaciones" class="form-control" rows="2" 
+                                  placeholder="Observaciones adicionales..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;" id="submit-btn">
+                            Guardar control
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-edit" style="display: none;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" style="margin-top: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 class="mb-0">Registros guardados</h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="filter-nadador" class="form-control" style="width: auto;">
+                            <option value="">Todos los nadadores</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="btn-load-records" style="font-size: 0.875rem;">
+                            Cargar registros
+                        </button>
+                    </div>
+                </div>
+                <div id="records-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        function showAlert(message, type = 'error') {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type === 'success' ? 'success' : 'error'}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        function populateFormFields(data) {
+            const fields = [
+                'hrv_rmssd', 'hrv_sdnn', 'hrv_fc_reposo',
+                'cmj_altura_cm', 'cmj_tiempo_contacto_ms', 'cmj_potencia_wkg',
+                'dominadas_num', 'dominadas_kg_extra',
+                'lactato_4mmol_velocidad', 'lactato_concentracion_mmol', 'lactato_zona_test',
+                'cortisol_ugdl', 'testosterona_ngdl', 'annotaciones'
+            ];
+            fields.forEach(field => {
+                const el = document.getElementById(field);
+                if (el) el.value = data[field] || '';
+            });
+        }
+
+        function clearForm() {
+            document.getElementById('control-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('submit-btn').textContent = 'Guardar control';
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+            document.getElementById('fecha').valueAsDate = new Date();
+            document.getElementById('ratio_cortisol_testo').value = '';
+        }
+
+        function calculateRatio() {
+            const cortisol = parseFloat(document.getElementById('cortisol_ugdl').value);
+            const testosterona = parseFloat(document.getElementById('testosterona_ngdl').value);
+            if (cortisol && testosterona && testosterona > 0) {
+                document.getElementById('ratio_cortisol_testo').value = (cortisol / testosterona).toFixed(4);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!auth.requireAuth()) return;
+
+            const user = auth.getUser();
+            if (user?.email) {
+                document.getElementById('user-name').textContent = user.email;
+            }
+
+            document.getElementById('fecha').valueAsDate = new Date();
+            document.getElementById('logout-btn').addEventListener('click', () => auth.logout());
+
+            // Load swimmers for dropdowns
+            const nadadorSelect = document.getElementById('nadador_id');
+            const filterSelect = document.getElementById('filter-nadador');
+            try {
+                const response = await api.getNadadores();
+                if (response.datos && response.datos.length > 0) {
+                    response.datos.forEach(nadador => {
+                        const option1 = document.createElement('option');
+                        option1.value = nadador.id_seudonimo;
+                        option1.textContent = `${nadador.nombre} (${nadador.id_seudonimo})`;
+                        nadadorSelect.appendChild(option1);
+                        
+                        const option2 = document.createElement('option');
+                        option2.value = nadador.id_seudonimo;
+                        option2.textContent = `${nadador.nombre} (${nadador.id_seudonimo})`;
+                        filterSelect.appendChild(option2);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading swimmers:', error);
+                showAlert('Error cargando nadadores');
+            }
+
+            // Auto-calculate ratio when hormones change
+            document.getElementById('cortisol_ugdl').addEventListener('input', calculateRatio);
+            document.getElementById('testosterona_ngdl').addEventListener('input', calculateRatio);
+
+            // Cancel edit button
+            document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+                clearForm();
+            });
+
+            const form = document.getElementById('control-form');
+            const submitBtn = document.getElementById('submit-btn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const nadadorId = document.getElementById('nadador_id').value.trim();
+                const fecha = document.getElementById('fecha').value;
+                const editId = document.getElementById('edit-id').value;
+
+                if (!nadadorId || !fecha) {
+                    showAlert('Por favor, completa los campos obligatorios');
+                    return;
+                }
+
+                const data = {
+                    nadador_id: nadadorId,
+                    fecha: fecha,
+                    entrenador_id: user?.email || 'unknown'
+                };
+
+                const optionalFields = [
+                    'hrv_rmssd', 'hrv_sdnn', 'hrv_fc_reposo',
+                    'cmj_altura_cm', 'cmj_tiempo_contacto_ms', 'cmj_potencia_wkg',
+                    'dominadas_num', 'dominadas_kg_extra',
+                    'lactato_4mmol_velocidad', 'lactato_concentracion_mmol', 'lactato_zona_test',
+                    'cortisol_ugdl', 'testosterona_ngdl', 'annotaciones'
+                ];
+
+                optionalFields.forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el && el.value.trim()) {
+                        if (el.type === 'number') {
+                            data[field] = parseFloat(el.value);
+                        } else {
+                            data[field] = el.value.trim();
+                        }
+                    }
+                });
+
+                setLoading(submitBtn, true);
+
+                try {
+                    if (editId) {
+                        await api.updateControlFisiologico(editId, data);
+                        showAlert('Control actualizado correctamente.', 'success');
+                        clearForm();
+                    } else {
+                        await api.createControlFisiologico(data);
+                        showAlert('Control fisiológico guardado correctamente.', 'success');
+                        form.reset();
+                        document.getElementById('fecha').valueAsDate = new Date();
+                    }
+                    document.getElementById('btn-load-records').click();
+                } catch (error) {
+                    showAlert(error.message);
+                } finally {
+                    setLoading(submitBtn, false);
+                }
+            });
+
+            // Load records functionality
+            document.getElementById('btn-load-records').addEventListener('click', async () => {
+                const nadadorId = document.getElementById('filter-nadador').value;
+                const params = {};
+                if (nadadorId) params.nadador_id = nadadorId;
+
+                try {
+                    const response = await api.getControlesFisiologicos(params);
+                    renderRecordsList(response.datos || []);
+                } catch (error) {
+                    showAlert('Error cargando registros: ' + error.message);
+                }
+            });
+
+            function renderRecordsList(records) {
+                const container = document.getElementById('records-list');
+                if (!records || records.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-secondary);">No hay registros guardados.</p>';
+                    return;
+                }
+
+                container.innerHTML = `<table class="table" style="font-size: 0.875rem;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nadador</th>
+                            <th>HRV (RMSSD)</th>
+                            <th>CMJ (cm)</th>
+                            <th>Dominadas</th>
+                            <th>Ratio C/T</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${records.map(r => `
+                            <tr>
+                                <td>${r.fecha}</td>
+                                <td>${r.nadador_id}</td>
+                                <td>${r.hrv_rmssd || '-'}</td>
+                                <td>${r.cmj_altura_cm || '-'}</td>
+                                <td>${r.dominadas_num || '-'}</td>
+                                <td>${r.ratio_cortisol_testo || '-'}</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="editRecord('${r.id}')">Editar</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">Eliminar</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            }
+
+            window.editRecord = async function(id) {
+                const record = currentRecords.find(r => r.id === id);
+                if (!record) {
+                    // Search in the displayed list
+                    try {
+                        const response = await api.getControlesFisiologicos({});
+                        const allRecords = response.datos || [];
+                        const found = allRecords.find(r => r.id === id);
+                        if (found) {
+                            loadRecordIntoForm(found);
+                        }
+                    } catch (error) {
+                        showAlert('Error al cargar registro: ' + error.message);
+                    }
+                } else {
+                    loadRecordIntoForm(record);
+                }
+            };
+
+            function loadRecordIntoForm(record) {
+                document.getElementById('edit-id').value = record.id;
+                document.getElementById('nadador_id').value = record.nadador_id || '';
+                document.getElementById('fecha').value = record.fecha || '';
+                populateFormFields(record);
+                document.getElementById('submit-btn').textContent = 'Actualizar control';
+                document.getElementById('btn-cancel-edit').style.display = 'block';
+                document.getElementById('control-form').scrollIntoView({ behavior: 'smooth' });
+                showAlert('Editando registro. Modifica los campos y guarda.', 'success');
+            }
+
+            window.deleteRecord = async function(id) {
+                if (!confirm('¿Eliminar este registro?')) return;
+
+                try {
+                    await api.deleteControlFisiologico(id);
+                    showAlert('Registro eliminado', 'success');
+                    document.getElementById('btn-load-records').click();
+                } catch (error) {
+                    showAlert('Error: ' + error.message);
+                }
+            }
+
+            let currentRecords = [];
+        });
+    </script>
+</body>
+</html>
