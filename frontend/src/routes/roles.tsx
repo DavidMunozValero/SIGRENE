@@ -22,7 +22,7 @@ const roles = [
     color: "from-[oklch(0.32_0.1_235)] to-[oklch(0.55_0.13_210)]",
     bullets: [
       "Crea y configura la organización (nombre, logo, zona horaria)",
-      "Invita y gestiona entrenadores y directores técnicos",
+      "Registra directamente entrenadores y nadadores",
       "Acceso a auditoría completa y ajustes de seguridad",
       "Puede desactivar coaches preservando datos de nadadores",
     ],
@@ -43,7 +43,7 @@ const roles = [
     to: "/app/coach",
     color: "from-[oklch(0.55_0.13_210)] to-[oklch(0.78_0.14_195)]",
     bullets: [
-      "Invita a sus nadadores con un código personal",
+      "Gestiona sus nadadores registrados por el admin",
       "Ve wellness diario y carga de entrenamiento de su grupo",
       "Comparte informes con padres mediante enlaces seguros",
       "Solo accede a SUS nadadores: 403 al intentar otros",
@@ -54,7 +54,7 @@ const roles = [
     to: "/app/swimmer",
     color: "from-[oklch(0.72_0.13_195)] to-[oklch(0.85_0.1_190)]",
     bullets: [
-      "Se registra con código de invitación del entrenador",
+      "Accede a su panel personal con credenciales del admin",
       "Completa wellness matinal antes del entreno",
       "Consulta su histórico personal y progreso",
       "Visibilidad estricta a sus propios datos",
