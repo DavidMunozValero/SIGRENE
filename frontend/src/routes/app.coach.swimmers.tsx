@@ -64,7 +64,7 @@ function SwimmersPage() {
       <PageHeader
         title="Nadadores"
         description={`${nadadores.length} nadadores registrados.`}
-        action={<Button variant="hero">+ Invitar</Button>}
+        action={<Button variant="hero">+ Registrar Nadador</Button>}
       />
       <SectionCard title={`${nadadores.length} nadadores`}>
         {nadadores.length === 0 ? (
@@ -75,12 +75,11 @@ function SwimmersPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 -m-5 p-5">
             {nadadores.map((s) => {
-              const initials = s.nombre
+              const initials = (s.nombre
                 ?.split(" ")
                 .map((x) => x[0])
                 .join("")
-                .slice(0, 2)
-                .toUpperCase() || s.id_seudonimo[0].toUpperCase();
+                .slice(0, 2) || s.id_seudonimo?.[0] || "?").toUpperCase();
               const age = s.fecha_nacimiento
                 ? new Date().getFullYear() - new Date(s.fecha_nacimiento).getFullYear()
                 : null;

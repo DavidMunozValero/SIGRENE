@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Logo } from "./Logo";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
 export type Role = "admin" | "director" | "coach" | "swimmer";
@@ -16,9 +16,9 @@ const ROLE_LABEL: Record<Role, string> = {
 const NAV: Record<Role, { label: string; to: string }[]> = {
   admin: [
     { label: "Resumen", to: "/app/admin" },
-    { label: "Entrenadores", to: "/app/admin/coaches" },
-    { label: "Invitaciones", to: "/app/admin/invitations" },
-    { label: "Ajustes", to: "/app/admin/settings" },
+    { label: "Usuarios", to: "/app/admin/users" },
+    { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
+    { label: "Vista Previa", to: "/app/admin/preview" },
   ],
   director: [
     { label: "Dashboard", to: "/app/director" },
@@ -37,19 +37,54 @@ const NAV: Record<Role, { label: string; to: string }[]> = {
   ],
 };
 
+function getUserInitials(email?: string, name?: string): string {
+  if (name) {
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?";
+  }
+  if (email && email.length > 0) {
+    return email[0].toUpperCase();
+  }
+  return "?";
+}
+
 export function AppShell({ role }: { role: Role }) {
   const router = useRouter();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const token = api.getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserEmail(payload.sub || "");
+      } catch (e) {
+        console.error("Error decoding token", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     api.clearToken();
     router.navigate({ to: "/login" });
   };
 
-  const switchRole = (r: Role) => {
-    const target = NAV[r][0].to;
-    router.navigate({ to: target });
+  const getSettingsPath = () => {
+    return "/app/admin/settings";
   };
 
   return (
@@ -84,26 +119,6 @@ export function AppShell({ role }: { role: Role }) {
               );
             })}
           </nav>
-
-          <p className="px-3 mt-8 text-xs uppercase tracking-wider text-white/50 mb-2">Rol demo</p>
-          <div className="space-y-1">
-            {(Object.keys(ROLE_LABEL) as Role[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => switchRole(r)}
-                className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${
-                  r === role ? "bg-aqua/20 text-white" : "text-white/60 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {ROLE_LABEL[r]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <Button variant="glass" size="sm" className="w-full" onClick={handleLogout}>
-            Cerrar sesión
-          </Button>
         </div>
       </aside>
 
@@ -126,14 +141,50 @@ export function AppShell({ role }: { role: Role }) {
               <span className="text-xs uppercase tracking-wider text-muted-foreground">Conectado como</span>
               <span className="text-sm font-semibold text-foreground">{ROLE_LABEL[role]}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col items-end leading-tight">
-                <span className="text-sm font-medium text-foreground">Usuario</span>
-                <span className="text-xs text-muted-foreground">SIGRENE</span>
-              </div>
-              <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
-                U
-              </div>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                aria-label="Menú de usuario"
+              >
+                <div className="hidden sm:flex flex-col items-end leading-tight">
+                  <span className="text-sm font-medium text-foreground">{userName || userEmail || "Usuario"}</span>
+                  <span className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</span>
+                </div>
+                <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
+                  {getUserInitials(userEmail, userName)}
+                </div>
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border/60 bg-card shadow-elevated overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border/60">
+                    <p className="text-sm font-medium text-foreground">{userName || "Usuario"}</p>
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      to={getSettingsPath()}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                      </svg>
+                      Ajustes
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                      </svg>
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

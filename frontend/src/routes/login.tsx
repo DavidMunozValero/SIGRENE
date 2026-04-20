@@ -31,7 +31,9 @@ function LoginPage() {
 
     try {
       await api.login(email, password);
-      navigate({ to: "/app/coach" });
+      const role = api.getUserRole() || "coach";
+      const redirectTo = api.getDefaultRouteForRole(role);
+      navigate({ to: redirectTo });
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");
     } finally {
