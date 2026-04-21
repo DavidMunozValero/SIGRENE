@@ -6,7 +6,7 @@ SIGRENE es una plataforma digital segura diseñada para gestionar el seguimiento
 
 ## Estado del Proyecto
 
-⚠️ **Estado actual: Prototipo/Maqueta** - El frontend React está en desarrollo y algunas funcionalidades usan datos de demo. El backend está completamente funcional con MongoDB.
+⚠️ **Estado actual: Prototipo** - El frontend React está en desarrollo y algunas funcionalidades usan datos de demo. El backend está completamente funcional con MongoDB.
 
 ## 🎯 Funcionalidades Implementadas
 
