@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
   ],
   build: {
-    outDir: "dist/client",
+    outDir: "dist",
     emptyOutDir: true,
     target: "es2020",
     rollupOptions: {
