@@ -1,0 +1,31 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { tanstackRouterVite } from "@tanstack/router-plugin";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [
+    tanstackRouterVite(),
+    tailwindcss(),
+    tsconfigPaths(),
+    react(),
+  ],
+  build: {
+    outDir: "dist/client",
+    emptyOutDir: true,
+    target: "es2020",
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+      },
+    },
+  },
+  server: {
+    port: 5173,
+    host: true,
+  },
+  envPrefix: "VITE_",
+});

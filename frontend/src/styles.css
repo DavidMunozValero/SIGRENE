@@ -1,0 +1,218 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * SIGRENE — Aquatic modern design system.
+ * Cyan/teal palette evoking water, with subtle glassmorphism and water gradients.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-deep: var(--deep);
+  --color-surface: var(--surface);
+  --color-aqua: var(--aqua);
+  --color-aqua-foreground: var(--aqua-foreground);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Base — soft icy white */
+  --background: oklch(0.985 0.01 220);
+  --foreground: oklch(0.22 0.06 235);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.06 235);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.06 235);
+
+  /* Primary — deep teal */
+  --primary: oklch(0.55 0.13 210);
+  --primary-foreground: oklch(0.99 0.01 200);
+
+  /* Secondary — pale aqua surface */
+  --secondary: oklch(0.95 0.03 210);
+  --secondary-foreground: oklch(0.3 0.08 230);
+
+  --muted: oklch(0.96 0.015 215);
+  --muted-foreground: oklch(0.5 0.04 230);
+
+  --accent: oklch(0.93 0.05 200);
+  --accent-foreground: oklch(0.28 0.09 230);
+
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 0);
+
+  --border: oklch(0.9 0.025 215);
+  --input: oklch(0.92 0.025 215);
+  --ring: oklch(0.65 0.14 200);
+
+  /* Aquatic accents */
+  --deep: oklch(0.32 0.1 235);             /* deep ocean */
+  --surface: oklch(0.78 0.11 200);         /* shallow water */
+  --aqua: oklch(0.78 0.14 195);            /* bright cyan accent */
+  --aqua-foreground: oklch(0.2 0.06 235);
+
+  /* Gradients */
+  --gradient-water: linear-gradient(135deg, oklch(0.55 0.13 210) 0%, oklch(0.72 0.13 195) 50%, oklch(0.85 0.1 190) 100%);
+  --gradient-deep: linear-gradient(160deg, oklch(0.32 0.1 235) 0%, oklch(0.42 0.13 220) 60%, oklch(0.55 0.13 200) 100%);
+  --gradient-surface: linear-gradient(180deg, oklch(0.97 0.02 210) 0%, oklch(0.92 0.04 200) 100%);
+  --gradient-glow: radial-gradient(60% 60% at 50% 0%, oklch(0.78 0.14 195 / 0.35), transparent 70%);
+
+  /* Shadows */
+  --shadow-glass: 0 8px 32px -8px oklch(0.32 0.1 235 / 0.25), inset 0 1px 0 oklch(1 0 0 / 0.4);
+  --shadow-elevated: 0 20px 60px -20px oklch(0.32 0.1 235 / 0.35);
+  --shadow-aqua: 0 10px 40px -10px oklch(0.65 0.14 200 / 0.5);
+
+  /* Charts */
+  --chart-1: oklch(0.55 0.13 210);
+  --chart-2: oklch(0.72 0.13 195);
+  --chart-3: oklch(0.42 0.13 220);
+  --chart-4: oklch(0.78 0.14 165);
+  --chart-5: oklch(0.85 0.1 190);
+
+  /* Sidebar */
+  --sidebar: oklch(0.32 0.1 235);
+  --sidebar-foreground: oklch(0.97 0.02 200);
+  --sidebar-primary: oklch(0.78 0.14 195);
+  --sidebar-primary-foreground: oklch(0.2 0.06 235);
+  --sidebar-accent: oklch(0.4 0.12 225);
+  --sidebar-accent-foreground: oklch(0.97 0.02 200);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+  --sidebar-ring: oklch(0.78 0.14 195);
+
+  --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  --background: oklch(0.18 0.05 240);
+  --foreground: oklch(0.96 0.02 200);
+  --card: oklch(0.24 0.06 235);
+  --card-foreground: oklch(0.96 0.02 200);
+  --popover: oklch(0.24 0.06 235);
+  --popover-foreground: oklch(0.96 0.02 200);
+  --primary: oklch(0.78 0.14 195);
+  --primary-foreground: oklch(0.2 0.06 235);
+  --secondary: oklch(0.3 0.07 230);
+  --secondary-foreground: oklch(0.96 0.02 200);
+  --muted: oklch(0.28 0.05 230);
+  --muted-foreground: oklch(0.72 0.04 210);
+  --accent: oklch(0.34 0.09 220);
+  --accent-foreground: oklch(0.96 0.02 200);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.99 0.01 0);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.12);
+  --ring: oklch(0.72 0.14 195);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    background-image:
+      radial-gradient(50% 40% at 80% 0%, oklch(0.78 0.14 195 / 0.18), transparent 60%),
+      radial-gradient(40% 30% at 0% 30%, oklch(0.55 0.13 210 / 0.12), transparent 60%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-water { background-image: var(--gradient-water); }
+  .bg-gradient-deep { background-image: var(--gradient-deep); }
+  .bg-gradient-surface { background-image: var(--gradient-surface); }
+  .bg-gradient-glow { background-image: var(--gradient-glow); }
+
+  .shadow-glass { box-shadow: var(--shadow-glass); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-aqua { box-shadow: var(--shadow-aqua); }
+
+  .glass {
+    background-color: oklch(1 0 0 / 0.65);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid oklch(1 0 0 / 0.4);
+  }
+
+  .glass-dark {
+    background-color: oklch(0.32 0.1 235 / 0.4);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid oklch(1 0 0 / 0.1);
+  }
+
+  .text-gradient-water {
+    background: var(--gradient-water);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Subtle water ripple animation */
+  @keyframes ripple {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+    50% { transform: translateY(-6px) scale(1.02); opacity: 0.8; }
+  }
+  .animate-ripple { animation: ripple 6s ease-in-out infinite; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.2), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+  }
+}

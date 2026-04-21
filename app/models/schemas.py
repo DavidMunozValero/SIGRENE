@@ -1,6 +1,52 @@
 from datetime import date, datetime
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional, Any
+from enum import Enum
+
+
+class GeneroEnum(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+
+class EstiloEnum(str, Enum):
+    FREESTYLE = "freestyle"
+    BACKSTROKE = "backstroke"
+    BREASTSTROKE = "breaststroke"
+    BUTTERFLY = "butterfly"
+    IM = "IM"
+    FREE_RELAY = "free_relay"
+    MEDLEY_RELAY = "medley_relay"
+
+
+class EmergencyContact(BaseModel):
+    nombre: str = Field(..., description='Nombre del contacto de emergencia')
+    telefono: str = Field(..., description='Teléfono de emergencia')
+    relacion: str = Field(..., description='Relación (madre, padre, tutor, etc.)')
+
+
+class TrainingGroupBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description='Nombre del grupo')
+    description: Optional[str] = Field(default=None, description='Descripción del grupo')
+
+
+class TrainingGroupCreate(TrainingGroupBase):
+    pass
+
+
+class TrainingGroupUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class TrainingGroupResponse(TrainingGroupBase):
+    id: str = Field(..., description='ID del grupo')
+    coach_id: str = Field(..., description='ID del entrenador propietario')
+    is_active: bool = Field(default=True)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class RegistroManana(BaseModel):
@@ -92,39 +138,70 @@ class RegistroDiario(BaseModel):
 
 
 class NadadorBase(BaseModel):
-    id_seudonimo: str = Field(..., description='ID seudonimizado único (ej: N-001)')
+    pseudonym: Optional[str] = Field(default=None, description='ID seudonimizado único (ej: NAD-2026-0042). Auto-generado si no se proporciona.')
     nombre: str = Field(..., description='Nombre del nadador')
+    apellidos: Optional[str] = Field(default=None, description='Apellidos del nadador')
     fecha_nacimiento: Optional[date] = Field(default=None, description='Fecha de nacimiento')
-    genero: Optional[str] = Field(default=None, description='Género')
+    genero: Optional[GeneroEnum] = Field(default=None, description='Género')
     
-    club: Optional[str] = Field(default=None, description='Club')
     provincia: Optional[str] = Field(default=None, description='Provincia')
+    club: Optional[str] = Field(default=None, description='Club')
     
-    fecha_alta: Optional[date] = Field(default=None, description='Fecha de alta en el sistema')
-    entrenador_principal: Optional[str] = Field(default=None, description='Email del entrenador principal')
+    # Estilos preferidos
+    estilos: Optional[List[EstiloEnum]] = Field(
+        default_factory=list,
+        description='Estilos que compete el nadador'
+    )
     
-    telefono_emergencia: Optional[str] = Field(default=None, description='Teléfono de emergencia')
-    observaciones: Optional[str] = Field(default=None, description='Observaciones generales')
+    # Datos morfológicos
+    altura_cm: Optional[float] = Field(default=None, gt=0, description='Altura (cm)')
+    altura_sentado_cm: Optional[float] = Field(default=None, gt=0, description='Altura sentado (cm)')
+    envergadura_cm: Optional[float] = Field(default=None, gt=0, description='Envergadura (cm)')
+    talla_pie_cm: Optional[float] = Field(default=None, gt=0, description='Talla de pie (cm)')
+    tamanio_mano_cm: Optional[float] = Field(default=None, gt=0, description='Tamaño de mano (cm)')
+    
+    # Contacto de emergencia
+    contacto_emergencia: Optional[EmergencyContact] = Field(default=None, description='Datos de contacto de emergencia')
+    
+    # Reporting a padres
+    email_padres: Optional[EmailStr] = Field(default=None, description='Email de los padres/tutores')
+    reportes_activos: bool = Field(default=False, description='Si los reportes están activos')
 
 
 class NadadorCreate(NadadorBase):
-    pass
+    group_id: Optional[str] = Field(default=None, description='ID del grupo de entrenamiento')
 
 
 class NadadorUpdate(BaseModel):
     nombre: Optional[str] = None
+    apellidos: Optional[str] = None
     fecha_nacimiento: Optional[date] = None
-    genero: Optional[str] = None
-    club: Optional[str] = None
+    genero: Optional[GeneroEnum] = None
     provincia: Optional[str] = None
-    fecha_alta: Optional[date] = None
-    entrenador_principal: Optional[str] = None
-    telefono_emergencia: Optional[str] = None
-    observaciones: Optional[str] = None
+    club: Optional[str] = None
+    estilos: Optional[List[EstiloEnum]] = None
+    altura_cm: Optional[float] = None
+    altura_sentado_cm: Optional[float] = None
+    envergadura_cm: Optional[float] = None
+    talla_pie_cm: Optional[float] = None
+    tamanio_mano_cm: Optional[float] = None
+    contacto_emergencia: Optional[EmergencyContact] = None
+    email_padres: Optional[EmailStr] = None
+    reportes_activos: Optional[bool] = None
+    group_id: Optional[str] = None
+    is_archived: Optional[bool] = None
 
 
 class NadadorResponse(NadadorBase):
+    id_seudonimo: str = Field(..., description='ID seudonimizado (para compatibilidad)')
+    coach_id: Optional[str] = Field(default=None, description='ID del entrenador asignado')
+    group_id: Optional[str] = Field(default=None, description='ID del grupo de entrenamiento')
+    group_name: Optional[str] = Field(default=None, description='Nombre del grupo (joined)')
+    is_archived: bool = Field(default=False, description='Si está archivado')
+    archived_at: Optional[datetime] = Field(default=None, description='Fecha de archivado')
+    created_by: Optional[str] = Field(default=None, description='ID del creador')
     created_at: Optional[datetime] = Field(default=None, description='Fecha de creación')
+    updated_by: Optional[str] = Field(default=None, description='ID del último editor')
     updated_at: Optional[datetime] = Field(default=None, description='Última modificación')
 
 

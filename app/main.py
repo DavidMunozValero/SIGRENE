@@ -7,7 +7,7 @@ lifecycle, and defines the API routes (endpoints) for the frontend to consume.
 from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -22,7 +22,8 @@ from app.models.schemas import (
     ComposicionCorporal, ComposicionCorporalResponse,
     AnalisisCompeticion, AnalisisCompeticionResponse,
     ACWRResponse, ListaResponse, UpdateResponse, DeleteResponse,
-    NadadorCreate, NadadorUpdate, NadadorResponse
+    NadadorCreate, NadadorUpdate, NadadorResponse,
+    TrainingGroupCreate, TrainingGroupUpdate, TrainingGroupResponse
 )
 from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user
 from app.services.calculations import calculate_session_metrics, calculate_acwr
@@ -41,14 +42,55 @@ def _sanitize_for_mongo(data: dict) -> dict:
     return result
 
 
+def _check_swimmer_access(db, nadador_id: str, coach_id: str, user_role: str) -> bool:
+    """Check if coach has access to swimmer. Returns True if access granted, False otherwise."""
+    if user_role == "admin":
+        return True
+    
+    nadador = db["nadadores"].find_one({
+        "$or": [{"pseudonym": nadador_id}, {"id_seudonimo": nadador_id}]
+    })
+    
+    if not nadador:
+        return False
+    
+    return nadador.get("coach_id") == coach_id
+
+
+def _get_coach_swimmer_ids(db, coach_id: str, user_role: str) -> List[str]:
+    """Get list of swimmer IDs that coach has access to."""
+    if user_role == "admin":
+        swimmers = db["nadadores"].find({}, {"pseudonym": 1, "id_seudonimo": 1})
+        return [s.get("pseudonym") or s["id_seudonimo"] for s in swimmers]
+    
+    swimmers = db["nadadores"].find(
+        {"coach_id": coach_id},
+        {"pseudonym": 1, "id_seudonimo": 1}
+    )
+    return [s.get("pseudonym") or s["id_seudonimo"] for s in swimmers]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manages the startup and shutdown events of the FastAPI application.
 
-    Connects to MongoDB on startup and safely disconnects on shutdown.
+    Connects to MongoDB on startup, creates indexes, and safely disconnects on shutdown.
     """
     # Startup: Connect to MongoDB
     DatabaseClient.connect()
+    
+    # Create indexes for performance
+    db = DatabaseClient.get_db()
+    db["nadadores"].create_index("coach_id")
+    db["nadadores"].create_index("fecha_nacimiento")
+    db["nadadores"].create_index("is_archived")
+    db["nadadores"].create_index("group_id")
+    db["training_groups"].create_index("coach_id")
+    db["registros_diarios"].create_index("nadador_id")
+    db["controles_fisiologicos"].create_index("nadador_id")
+    db["composicion_corporal"].create_index("nadador_id")
+    db["analisis_competicion"].create_index("nadador_id")
+    
     yield
     # Shutdown: Disconnect from MongoDB
     DatabaseClient.disconnect()
@@ -95,13 +137,25 @@ async def list_registros_diarios(
         Paginated list of daily records with total count.
     """
     limit = min(limit, 100)
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
 
     db = DatabaseClient.get_db()
     coleccion = db["registros_diarios"]
 
     query = {}
+    
+    # Access control: filter by coach's swimmers
+    if user_role != "admin" and not nadador_id:
+        swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
+        if not swimmer_ids:
+            return RegistroDiarioListResponse(total=0, skip=skip, limit=limit, registros=[])
+        query["nadador_id"] = {"$in": swimmer_ids}
 
     if nadador_id:
+        # Check access to specific swimmer
+        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
     if fecha_desde or fecha_hasta:
@@ -150,11 +204,24 @@ async def get_dashboard_stats(
     Returns:
         DashboardStats: Aggregated statistics including volume, sessions, styles, etc.
     """
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
     db = DatabaseClient.get_db()
     coleccion = db["registros_diarios"]
 
     query = {}
+    
+    # Access control
+    if user_role != "admin" and not nadador_id:
+        swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
+        if not swimmer_ids:
+            return DashboardStats()
+        query["nadador_id"] = {"$in": swimmer_ids}
+    
     if nadador_id:
+        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
     registros = list(coleccion.find(query))
@@ -269,11 +336,18 @@ async def get_registro_diario(
     except InvalidId:
         raise HTTPException(status_code=400, detail="ID de registro inválido")
 
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+
     db = DatabaseClient.get_db()
     doc = db["registros_diarios"].find_one({"_id": obj_id})
 
     if not doc:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
 
     return RegistroDiarioResponse(
         id=str(doc["_id"]),
@@ -305,8 +379,15 @@ async def get_registros_by_nadador(
         Paginated list of daily records for the swimmer.
     """
     limit = min(limit, 100)
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
 
     db = DatabaseClient.get_db()
+
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     coleccion = db["registros_diarios"]
 
     query = {"nadador_id": nadador_id}
@@ -340,6 +421,15 @@ async def create_registro_diario(
         current_user: dict = Depends(get_current_user)
 ):
     try:
+        coach_id = current_user.get("sub")
+        user_role = current_user.get("rol", "coach")
+
+        # Access control
+        if user_role != "admin" and not _check_swimmer_access(
+            DatabaseClient.get_db(), registro.nadador_id, coach_id, user_role
+        ):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
         print(f"El usuario {current_user['sub']} está guardando un entrenamiento.")
 
         registro_dict = registro.model_dump(exclude_none=True)
@@ -359,6 +449,8 @@ async def create_registro_diario(
             "inserted_id": str(result.inserted_id),
             "calculos_aplicados": calculos
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
@@ -405,6 +497,211 @@ async def registrar_usuario(usuario: UsuarioCreate):
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
     return {"message": f"Usuario {usuario.email} registrado correctamente."}
+
+
+class UsuarioResponse(BaseModel):
+    email: str
+    nombre_completo: str
+    rol: str
+    nadadores_asignados: List[str]
+    activo: bool
+    created_at: Optional[datetime] = None
+
+
+class UsuarioListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    datos: List[UsuarioResponse]
+
+
+@app.get("/api/v1/usuarios/", response_model=UsuarioListResponse)
+async def list_usuarios(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    rol: Optional[str] = Query(default=None, description="Filtrar por rol"),
+    current_user: dict = Depends(get_current_user)
+):
+    """List all users (admin only).
+
+    Returns a paginated list of all users in the system.
+    Only accessible by admin users.
+    """
+    if current_user.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden ver la lista de usuarios"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    query = {}
+    if rol:
+        query["rol"] = rol
+
+    total = coleccion_usuarios.count_documents(query)
+    cursor = coleccion_usuarios.find(query, {"hashed_password": 0}).skip(skip).limit(limit)
+    
+    usuarios = []
+    for doc in cursor:
+        usuarios.append(UsuarioResponse(
+            email=doc["email"],
+            nombre_completo=doc["nombre_completo"],
+            rol=doc["rol"],
+            nadadores_asignados=doc.get("nadadores_asignados", []),
+            activo=doc.get("activo", True),
+            created_at=doc.get("created_at")
+        ))
+
+    return UsuarioListResponse(
+        total=total,
+        skip=skip,
+        limit=limit,
+        datos=usuarios
+    )
+
+
+@app.put("/api/v1/usuarios/{email}", response_model=UpdateResponse)
+async def update_usuario(
+    email: str,
+    update_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update a user's role or status (admin only).
+
+    Allows admin to change user roles or deactivate users.
+    """
+    if current_user.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden modificar usuarios"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    # Build update document (only allow specific fields to be updated)
+    allowed_fields = {"rol", "activo", "nombre_completo", "nadadores_asignados"}
+    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields}
+
+    if not update_dict:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se proporcionaron campos válidos para actualizar"
+        )
+
+    result = coleccion_usuarios.update_one(
+        {"email": email},
+        {"$set": update_dict}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+
+    return UpdateResponse(
+        message=f"Usuario {email} actualizado correctamente",
+        modified_count=result.modified_count
+    )
+
+
+@app.delete("/api/v1/usuarios/{email}", response_model=DeleteResponse)
+async def delete_usuario(
+    email: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a user completely from the database (admin only).
+
+    This is a hard delete - the user will be permanently removed.
+    """
+    if current_user.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden eliminar usuarios"
+        )
+
+    # Prevent admin from deleting themselves
+    if current_user.get("sub") == email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No puedes eliminarte a ti mismo"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    result = coleccion_usuarios.delete_one({"email": email})
+
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+
+    return DeleteResponse(
+        message=f"Usuario {email} eliminado correctamente",
+        deleted_count=result.deleted_count
+    )
+
+
+@app.get("/api/v1/usuarios/me")
+async def get_mi_perfil(current_user: dict = Depends(get_current_user)):
+    """Get current user's profile."""
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+    
+    usuario = coleccion_usuarios.find_one(
+        {"email": current_user.get("sub")},
+        {"hashed_password": 0}
+    )
+    
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    
+    return {
+        "email": usuario["email"],
+        "nombre_completo": usuario.get("nombre_completo", ""),
+        "rol": usuario["rol"],
+        "nadadores_asignados": usuario.get("nadadores_asignados", []),
+        "activo": usuario.get("activo", True),
+    }
+
+
+@app.put("/api/v1/usuarios/me")
+async def update_mi_perfil(
+    update_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update current user's profile (name, password)."""
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+    
+    allowed_fields = {"nombre_completo"}
+    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields}
+    
+    # Handle password change separately
+    if "password" in update_data:
+        hashed_pwd = get_password_hash(update_data["password"])
+        update_dict["hashed_password"] = hashed_pwd
+    
+    if not update_dict:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se proporcionaron campos válidos para actualizar"
+        )
+    
+    result = coleccion_usuarios.update_one(
+        {"email": current_user.get("sub")},
+        {"$set": update_dict}
+    )
+    
+    return {"message": "Perfil actualizado correctamente"}
 
 
 @app.post("/api/v1/login", response_model=Token)
@@ -532,6 +829,15 @@ async def create_control_fisiologico(
         control: ControlFisiológico,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(
+        DatabaseClient.get_db(), control.nadador_id, coach_id, user_role
+    ):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     db = DatabaseClient.get_db()
     control_dict = _sanitize_for_mongo(control.model_dump(exclude_none=True))
 
@@ -551,9 +857,22 @@ async def list_controles_fisiologicos(
         nadador_id: Optional[str] = None,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
     db = DatabaseClient.get_db()
     query = {}
+    
+    # Access control
+    if user_role != "admin" and not nadador_id:
+        swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
+        if not swimmer_ids:
+            return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
+        query["nadador_id"] = {"$in": swimmer_ids}
+    
     if nadador_id:
+        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
     total = db["controles_fisiologicos"].count_documents(query)
@@ -592,6 +911,15 @@ async def create_composicion_corporal(
         composicion: ComposicionCorporal,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(
+        DatabaseClient.get_db(), composicion.nadador_id, coach_id, user_role
+    ):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     db = DatabaseClient.get_db()
     result = db["composicion_corporal"].insert_one(_sanitize_for_mongo(composicion.model_dump()))
     return {"message": "Composición corporal registrada", "inserted_id": str(result.inserted_id)}
@@ -604,9 +932,22 @@ async def list_composicion_corporal(
         nadador_id: Optional[str] = None,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
     db = DatabaseClient.get_db()
     query = {}
+    
+    # Access control
+    if user_role != "admin" and not nadador_id:
+        swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
+        if not swimmer_ids:
+            return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
+        query["nadador_id"] = {"$in": swimmer_ids}
+    
     if nadador_id:
+        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
     total = db["composicion_corporal"].count_documents(query)
@@ -642,6 +983,15 @@ async def create_analisis_competicion(
         analisis: AnalisisCompeticion,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(
+        DatabaseClient.get_db(), analisis.nadador_id, coach_id, user_role
+    ):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     db = DatabaseClient.get_db()
     result = db["analisis_competicion"].insert_one(_sanitize_for_mongo(analisis.model_dump()))
     return {"message": "Análisis de competición registrado", "inserted_id": str(result.inserted_id)}
@@ -655,10 +1005,24 @@ async def list_analisis_competicion(
         prueba: Optional[str] = None,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
     db = DatabaseClient.get_db()
     query = {}
+    
+    # Access control
+    if user_role != "admin" and not nadador_id:
+        swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
+        if not swimmer_ids:
+            return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
+        query["nadador_id"] = {"$in": swimmer_ids}
+    
     if nadador_id:
+        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+            raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
+    
     if prueba:
         query["prueba"] = {"$regex": prueba, "$options": "i"}
 
@@ -708,7 +1072,15 @@ async def get_acwr_history(
         semanas: int = 8,
         current_user: dict = Depends(get_current_user)
 ):
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+
     db = DatabaseClient.get_db()
+    
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     coleccion = db["registros_diarios"]
 
     end_date = datetime.now()
@@ -781,49 +1153,129 @@ async def get_acwr_history(
 
 # ==================== NADADORES ====================
 
+def _generate_pseudonym(db, coach_id: str) -> str:
+    """Generate a unique pseudonym in format NAD-YYYY-NNNN."""
+    year = datetime.now().year
+    prefix = f"NAD-{year}-"
+    
+    count = db["nadadores"].count_documents({
+        "coach_id": coach_id,
+        "pseudonym": {"$regex": f"^{prefix}"}
+    })
+    
+    return f"{prefix}{(count + 1):04d}"
+
+
+def _get_nadador_response(doc: dict, db) -> NadadorResponse:
+    """Build a NadadorResponse from a MongoDB document, joining group_name."""
+    group_name = None
+    if doc.get("group_id"):
+        group = db["training_groups"].find_one({"_id": doc["group_id"]})
+        if group:
+            group_name = group.get("name")
+    
+    return NadadorResponse(
+        id_seudonimo=doc.get("pseudonym") or doc["id_seudonimo"],
+        pseudonym=doc.get("pseudonym"),
+        nombre=doc.get("nombre"),
+        apellidos=doc.get("apellidos"),
+        fecha_nacimiento=doc.get("fecha_nacimiento"),
+        genero=doc.get("genero"),
+        provincia=doc.get("provincia"),
+        club=doc.get("club"),
+        estilos=doc.get("estilos"),
+        altura_cm=doc.get("altura_cm"),
+        altura_sentado_cm=doc.get("altura_sentado_cm"),
+        envergadura_cm=doc.get("envergadura_cm"),
+        talla_pie_cm=doc.get("talla_pie_cm"),
+        tamanio_mano_cm=doc.get("tamanio_mano_cm"),
+        contacto_emergencia=doc.get("contacto_emergencia"),
+        email_padres=doc.get("email_padres"),
+        reportes_activos=doc.get("reportes_activos", False),
+        coach_id=doc.get("coach_id"),
+        group_id=doc.get("group_id"),
+        group_name=group_name,
+        is_archived=doc.get("is_archived", False),
+        archived_at=doc.get("archived_at"),
+        created_by=doc.get("created_by"),
+        created_at=doc.get("created_at"),
+        updated_by=doc.get("updated_by"),
+        updated_at=doc.get("updated_at")
+    )
+
+
 @app.post("/api/v1/nadadores/", status_code=201)
 async def create_nadador(
         nadador: NadadorCreate,
         current_user: dict = Depends(get_current_user)
 ):
     db = DatabaseClient.get_db()
-    if db["nadadores"].find_one({"id_seudonimo": nadador.id_seudonimo}):
-        raise HTTPException(status_code=400, detail="Ya existe un nadador con ese ID")
-
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
+    pseudonym = nadador.pseudonym
+    if not pseudonym:
+        pseudonym = _generate_pseudonym(db, coach_id)
+    else:
+        if db["nadadores"].find_one({"pseudonym": pseudonym, "coach_id": coach_id}):
+            raise HTTPException(status_code=400, detail="Ya existe un nadador con ese pseudónimo")
+    
+    # Use pseudonym as id_seudonimo for backwards compatibility
     nadador_dict = _sanitize_for_mongo(nadador.model_dump())
+    nadador_dict["pseudonym"] = pseudonym
+    nadador_dict["id_seudonimo"] = pseudonym  # Backwards compatibility
+    nadador_dict["coach_id"] = coach_id
+    nadador_dict["created_by"] = coach_id
+    nadador_dict["updated_by"] = coach_id
     nadador_dict["created_at"] = datetime.utcnow()
     nadador_dict["updated_at"] = datetime.utcnow()
+    nadador_dict["is_archived"] = False
+
+    # Remove group_id from dict if None (to avoid MongoDB issues)
+    if nadador_dict.get("group_id") is None:
+        del nadador_dict["group_id"]
 
     result = db["nadadores"].insert_one(nadador_dict)
-    return {"message": "Nadador creado", "id": str(result.inserted_id)}
+    return {"message": "Nadador creado", "id": str(result.inserted_id), "pseudonym": pseudonym}
 
 
 @app.get("/api/v1/nadadores/", response_model=ListaResponse)
 async def list_nadadores(
         skip: int = 0,
         limit: int = 100,
+        group_id: Optional[str] = None,
+        include_archived: bool = False,
+        search: Optional[str] = None,
         current_user: dict = Depends(get_current_user)
 ):
     db = DatabaseClient.get_db()
-    total = db["nadadores"].count_documents({})
-    cursor = db["nadadores"].find({}).sort("nombre", 1).skip(skip).limit(limit)
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
+    query = {}
+    
+    # Access control: admin sees all, coaches see only their swimmers
+    if user_role != "admin":
+        query["coach_id"] = coach_id
+    
+    if not include_archived:
+        query["is_archived"] = {"$ne": True}
+    
+    if group_id:
+        query["group_id"] = group_id
+    
+    if search:
+        query["$or"] = [
+            {"nombre": {"$regex": search, "$options": "i"}},
+            {"pseudonym": {"$regex": search, "$options": "i"}},
+            {"apellidos": {"$regex": search, "$options": "i"}},
+            {"id_seudonimo": {"$regex": search, "$options": "i"}}
+        ]
+    
+    total = db["nadadores"].count_documents(query)
+    cursor = db["nadadores"].find(query).sort("nombre", 1).skip(skip).limit(limit)
 
-    nadadores = []
-    for doc in cursor:
-        nadadores.append(NadadorResponse(
-            id_seudonimo=doc["id_seudonimo"],
-            nombre=doc["nombre"],
-            fecha_nacimiento=doc.get("fecha_nacimiento"),
-            genero=doc.get("genero"),
-            club=doc.get("club"),
-            provincia=doc.get("provincia"),
-            fecha_alta=doc.get("fecha_alta"),
-            entrenador_principal=doc.get("entrenador_principal"),
-            telefono_emergencia=doc.get("telefono_emergencia"),
-            observaciones=doc.get("observaciones"),
-            created_at=doc.get("created_at"),
-            updated_at=doc.get("updated_at")
-        ))
+    nadadores = [_get_nadador_response(doc, db) for doc in cursor]
 
     return ListaResponse(total=total, skip=skip, limit=limit, datos=nadadores)
 
@@ -834,25 +1286,24 @@ async def get_nadador(
         current_user: dict = Depends(get_current_user)
 ):
     db = DatabaseClient.get_db()
-    doc = db["nadadores"].find_one({"id_seudonimo": nadador_id})
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
+    doc = db["nadadores"].find_one({
+        "$or": [
+            {"pseudonym": nadador_id},
+            {"id_seudonimo": nadador_id}
+        ]
+    })
 
     if not doc:
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
+    
+    # Access control
+    if user_role != "admin" and doc.get("coach_id") != coach_id:
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
-    return NadadorResponse(
-        id_seudonimo=doc["id_seudonimo"],
-        nombre=doc["nombre"],
-        fecha_nacimiento=doc.get("fecha_nacimiento"),
-        genero=doc.get("genero"),
-        club=doc.get("club"),
-        provincia=doc.get("provincia"),
-        fecha_alta=doc.get("fecha_alta"),
-        entrenador_principal=doc.get("entrenador_principal"),
-        telefono_emergencia=doc.get("telefono_emergencia"),
-        observaciones=doc.get("observaciones"),
-        created_at=doc.get("created_at"),
-        updated_at=doc.get("updated_at")
-    )
+    return _get_nadador_response(doc, db)
 
 
 @app.put("/api/v1/nadadores/{nadador_id}")
@@ -862,14 +1313,43 @@ async def update_nadador(
         current_user: dict = Depends(get_current_user)
 ):
     db = DatabaseClient.get_db()
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
+    existing = db["nadadores"].find_one({
+        "$or": [
+            {"pseudonym": nadador_id},
+            {"id_seudonimo": nadador_id}
+        ]
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Nadador no encontrado")
+    
+    # Access control
+    if user_role != "admin" and existing.get("coach_id") != coach_id:
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
     update_data = _sanitize_for_mongo(nadador.model_dump(exclude_none=True))
     if not update_data:
         raise HTTPException(status_code=400, detail="No hay datos para actualizar")
 
     update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_by"] = coach_id
+
+    # Handle archive separately
+    if "is_archived" in update_data:
+        if update_data["is_archived"]:
+            update_data["archived_at"] = datetime.utcnow()
+        else:
+            update_data["archived_at"] = None
+
+    # Remove None group_id
+    if update_data.get("group_id") is None:
+        update_data["group_id"] = None
 
     result = db["nadadores"].update_one(
-        {"id_seudonimo": nadador_id},
+        {"_id": existing["_id"]},
         {"$set": update_data}
     )
 
@@ -885,12 +1365,163 @@ async def delete_nadador(
         current_user: dict = Depends(get_current_user)
 ):
     db = DatabaseClient.get_db()
-    result = db["nadadores"].delete_one({"id_seudonimo": nadador_id})
-
-    if result.deleted_count == 0:
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
+    
+    existing = db["nadadores"].find_one({
+        "$or": [
+            {"pseudonym": nadador_id},
+            {"id_seudonimo": nadador_id}
+        ]
+    })
+    
+    if not existing:
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
+    
+    # Access control
+    if user_role != "admin" and existing.get("coach_id") != coach_id:
+        raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
+
+    # Check if swimmer has historical data
+    has_records = (
+        db["registros_diarios"].count_documents({"nadador_id": nadador_id}) > 0 or
+        db["controles_fisiologicos"].count_documents({"nadador_id": nadador_id}) > 0
+    )
+    
+    if has_records:
+        # Soft delete instead of hard delete
+        result = db["nadadores"].update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "is_archived": True,
+                "archived_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+                "updated_by": coach_id
+            }}
+        )
+        return {"message": "Nadador archivado (tiene datos históricos)", "deleted_count": 0, "archived": True}
+    
+    # Hard delete only if no historical data
+    result = db["nadadores"].delete_one({"_id": existing["_id"]})
 
     return {"message": "Nadador eliminado", "deleted_count": result.deleted_count}
+
+
+# ==================== TRAINING GROUPS ====================
+
+@app.get("/api/v1/grupos/", response_model=ListaResponse)
+async def list_grupos(
+        current_user: dict = Depends(get_current_user)
+):
+    """List training groups for the current coach."""
+    db = DatabaseClient.get_db()
+    coach_id = current_user.get("sub")
+    
+    query = {"coach_id": coach_id}
+    total = db["training_groups"].count_documents(query)
+    cursor = db["training_groups"].find(query).sort("name", 1)
+
+    grupos = []
+    for doc in cursor:
+        grupos.append(TrainingGroupResponse(
+            id=str(doc["_id"]),
+            coach_id=doc["coach_id"],
+            name=doc["name"],
+            description=doc.get("description"),
+            is_active=doc.get("is_active", True),
+            created_at=doc.get("created_at"),
+            updated_at=doc.get("updated_at")
+        ))
+
+    return ListaResponse(total=total, skip=0, limit=100, datos=grupos)
+
+
+@app.post("/api/v1/grupos/", status_code=201)
+async def create_grupo(
+        grupo: TrainingGroupCreate,
+        current_user: dict = Depends(get_current_user)
+):
+    """Create a new training group for the current coach."""
+    db = DatabaseClient.get_db()
+    coach_id = current_user.get("sub")
+    
+    grupo_dict = grupo.model_dump()
+    grupo_dict["coach_id"] = coach_id
+    grupo_dict["is_active"] = True
+    grupo_dict["created_at"] = datetime.utcnow()
+    grupo_dict["updated_at"] = datetime.utcnow()
+
+    result = db["training_groups"].insert_one(grupo_dict)
+    return {"message": "Grupo creado", "id": str(result.inserted_id)}
+
+
+@app.put("/api/v1/grupos/{grupo_id}")
+async def update_grupo(
+        grupo_id: str,
+        grupo: TrainingGroupUpdate,
+        current_user: dict = Depends(get_current_user)
+):
+    """Update a training group (only if owned by current coach)."""
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        obj_id = ObjectId(grupo_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="ID de grupo inválido")
+
+    db = DatabaseClient.get_db()
+    coach_id = current_user.get("sub")
+
+    update_data = grupo.model_dump(exclude_none=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No hay datos para actualizar")
+
+    update_data["updated_at"] = datetime.utcnow()
+
+    result = db["training_groups"].update_one(
+        {"_id": obj_id, "coach_id": coach_id},
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Grupo no encontrado o no tienes permisos")
+
+    return {"message": "Grupo actualizado", "modified_count": result.modified_count}
+
+
+@app.delete("/api/v1/grupos/{grupo_id}")
+async def delete_grupo(
+        grupo_id: str,
+        current_user: dict = Depends(get_current_user)
+):
+    """Delete a training group (only if owned by current coach).
+    
+    Note: This sets swimmers' group_id to null instead of actual deletion.
+    """
+    from bson import ObjectId
+    from bson.errors import InvalidId
+
+    try:
+        obj_id = ObjectId(grupo_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="ID de grupo inválido")
+
+    db = DatabaseClient.get_db()
+    coach_id = current_user.get("sub")
+
+    result = db["training_groups"].delete_one({"_id": obj_id, "coach_id": coach_id})
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Grupo no encontrado o no tienes permisos")
+
+    # Set group_id to null for all swimmers in this group
+    db["nadadores"].update_many(
+        {"group_id": grupo_id, "coach_id": coach_id},
+        {"$set": {"group_id": None, "updated_at": datetime.utcnow()}}
+    )
+
+    return {"message": "Grupo eliminado", "deleted_count": result.deleted_count}
 
 
 # ==================== UPDATE/DELETE endpoints ====================
@@ -944,11 +1575,20 @@ async def delete_registro_diario(
     except InvalidId:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    db = DatabaseClient.get_db()
-    result = db["registros_diarios"].delete_one({"_id": obj_id})
+    coach_id = current_user.get("sub")
+    user_role = current_user.get("rol", "coach")
 
-    if result.deleted_count == 0:
+    db = DatabaseClient.get_db()
+    
+    doc = db["registros_diarios"].find_one({"_id": obj_id})
+    if not doc:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    # Access control
+    if user_role != "admin" and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
+
+    result = db["registros_diarios"].delete_one({"_id": obj_id})
 
     return {"message": "Registro eliminado", "deleted_count": result.deleted_count}
 
