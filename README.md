@@ -1,6 +1,6 @@
 # SIGRENE 🏊‍♂️
 
-**System for Elite Swimmer Management and Performance** *(Sistema de Gestión y Rendimiento del Nadador de Élite)*
+**System for Elite Swimmer Management and Performance** *(Sistema de Gestión del Rendimiento en Nadadores de Élite)*
 
 SIGRENE es una plataforma digital segura diseñada para gestionar el seguimiento, registro y optimización del rendimiento de nadadores de élite. Actúa como base de datos centralizada y API para que los entrenadores inputen cargas de entrenamiento diarias, bienestar matutino y datos fisiológicos.
 
