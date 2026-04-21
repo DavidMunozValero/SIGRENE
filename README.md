@@ -33,9 +33,6 @@ SIGRENE es una plataforma digital segura diseñada para gestionar el seguimiento
 ```bash
 # Python 3.12+
 python --version
-
-# MongoDB Community Edition
-brew services list | grep mongodb
 ```
 
 ### 2. Iniciar MongoDB (macOS)
