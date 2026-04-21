@@ -34,9 +34,6 @@ SIGRENE es una plataforma digital segura diseñada para gestionar el seguimiento
 # Python 3.12+
 python --version
 
-# Poetry
-poetry --version
-
 # MongoDB Community Edition
 brew services list | grep mongodb
 ```
