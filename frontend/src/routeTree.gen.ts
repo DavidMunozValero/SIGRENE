@@ -31,10 +31,7 @@ import { Route as AppDirectorReportsRouteImport } from './routes/app.director.re
 import { Route as AppDirectorGroupsRouteImport } from './routes/app.director.groups'
 import { Route as AppCoachWellnessRouteImport } from './routes/app.coach.wellness'
 import { Route as AppCoachSwimmersRouteImport } from './routes/app.coach.swimmers'
-import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
 import { Route as AppAdminSettingsRouteImport } from './routes/app.admin.settings'
-import { Route as AppAdminRegisterTrainerRouteImport } from './routes/app.admin.register-trainer'
-import { Route as AppAdminPreviewRouteImport } from './routes/app.admin.preview'
 import { Route as AppAdminInvitationsRouteImport } from './routes/app.admin.invitations'
 
 const RolesRoute = RolesRouteImport.update({
@@ -147,24 +144,9 @@ const AppCoachSwimmersRoute = AppCoachSwimmersRouteImport.update({
   path: '/swimmers',
   getParentRoute: () => AppCoachRoute,
 } as any)
-const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppAdminRoute,
-} as any)
 const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminRegisterTrainerRoute = AppAdminRegisterTrainerRouteImport.update({
-  id: '/register-trainer',
-  path: '/register-trainer',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminPreviewRoute = AppAdminPreviewRouteImport.update({
-  id: '/preview',
-  path: '/preview',
   getParentRoute: () => AppAdminRoute,
 } as any)
 const AppAdminInvitationsRoute = AppAdminInvitationsRouteImport.update({
@@ -187,10 +169,7 @@ export interface FileRoutesByFullPath {
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
-  '/app/admin/preview': typeof AppAdminPreviewRoute
-  '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
-  '/app/admin/users': typeof AppAdminUsersRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
@@ -212,10 +191,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/roles': typeof RolesRoute
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
-  '/app/admin/preview': typeof AppAdminPreviewRoute
-  '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
-  '/app/admin/users': typeof AppAdminUsersRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
@@ -242,10 +218,7 @@ export interface FileRoutesById {
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
-  '/app/admin/preview': typeof AppAdminPreviewRoute
-  '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
-  '/app/admin/users': typeof AppAdminUsersRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
@@ -273,10 +246,7 @@ export interface FileRouteTypes {
     | '/app/director'
     | '/app/swimmer'
     | '/app/admin/invitations'
-    | '/app/admin/preview'
-    | '/app/admin/register-trainer'
     | '/app/admin/settings'
-    | '/app/admin/users'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
@@ -298,10 +268,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/roles'
     | '/app/admin/invitations'
-    | '/app/admin/preview'
-    | '/app/admin/register-trainer'
     | '/app/admin/settings'
-    | '/app/admin/users'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
@@ -327,10 +294,7 @@ export interface FileRouteTypes {
     | '/app/director'
     | '/app/swimmer'
     | '/app/admin/invitations'
-    | '/app/admin/preview'
-    | '/app/admin/register-trainer'
     | '/app/admin/settings'
-    | '/app/admin/users'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
@@ -514,32 +478,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoachSwimmersRouteImport
       parentRoute: typeof AppCoachRoute
     }
-    '/app/admin/users': {
-      id: '/app/admin/users'
-      path: '/users'
-      fullPath: '/app/admin/users'
-      preLoaderRoute: typeof AppAdminUsersRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
     '/app/admin/settings': {
       id: '/app/admin/settings'
       path: '/settings'
       fullPath: '/app/admin/settings'
       preLoaderRoute: typeof AppAdminSettingsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/app/admin/register-trainer': {
-      id: '/app/admin/register-trainer'
-      path: '/register-trainer'
-      fullPath: '/app/admin/register-trainer'
-      preLoaderRoute: typeof AppAdminRegisterTrainerRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/app/admin/preview': {
-      id: '/app/admin/preview'
-      path: '/preview'
-      fullPath: '/app/admin/preview'
-      preLoaderRoute: typeof AppAdminPreviewRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/app/admin/invitations': {
@@ -554,19 +497,13 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
-  AppAdminPreviewRoute: typeof AppAdminPreviewRoute
-  AppAdminRegisterTrainerRoute: typeof AppAdminRegisterTrainerRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
-  AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminInvitationsRoute: AppAdminInvitationsRoute,
-  AppAdminPreviewRoute: AppAdminPreviewRoute,
-  AppAdminRegisterTrainerRoute: AppAdminRegisterTrainerRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
-  AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
