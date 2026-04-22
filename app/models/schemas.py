@@ -227,6 +227,10 @@ class UsuarioBase(BaseModel):
         default_factory=list,
         description='Lista de IDs de nadadores bajo su tutela'
     )
+    foto_perfil: Optional[str] = Field(
+        default=None,
+        description='Foto de perfil codificada en base64'
+    )
 
 
 class UsuarioCreate(UsuarioBase):

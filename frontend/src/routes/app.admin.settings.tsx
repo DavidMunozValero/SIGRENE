@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ interface Profile {
   email: string;
   nombre_completo: string;
   rol: string;
+  foto_perfil?: string | null;
 }
 
 function SettingsPage() {
@@ -22,6 +23,8 @@ function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successPhoto, setSuccessPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     nombre_completo: "",
@@ -30,12 +33,17 @@ function SettingsPage() {
     confirmPassword: "",
   });
 
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadProfile() {
       try {
         const data = await api.getMiPerfil();
         setProfile(data);
         setFormData(prev => ({ ...prev, nombre_completo: data.nombre_completo || "" }));
+        if (data.foto_perfil) {
+          setPhotoPreview(data.foto_perfil);
+        }
       } catch (err: any) {
         setError(err.message || "Error cargando perfil");
       } finally {
@@ -44,6 +52,56 @@ function SettingsPage() {
     }
     loadProfile();
   }, []);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Por favor selecciona una imagen");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("La imagen debe ser menor de 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!photoPreview) return;
+
+    try {
+      await api.updateMiPerfil({ foto_perfil: photoPreview });
+      setSuccessPhoto(true);
+      setTimeout(() => setSuccessPhoto(false), 3000);
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || "Error actualizando foto");
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setError(null);
+    try {
+      await api.updateMiPerfil({ foto_perfil: null });
+      setPhotoPreview(null);
+      setSuccessPhoto(true);
+      setTimeout(() => setSuccessPhoto(false), 3000);
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || "Error eliminando foto");
+    }
+  };
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +174,69 @@ function SettingsPage() {
         </div>
       )}
 
+      {successPhoto && (
+        <div className="mb-4 rounded-lg bg-green-500/10 text-green-400 p-3 text-sm">
+          Foto actualizada correctamente
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Foto de perfil">
+          <form onSubmit={handlePhotoSubmit} className="space-y-4">
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Foto de perfil"
+                  className="h-20 w-20 rounded-full object-cover border-2 border-border"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-gradient-water flex items-center justify-center text-white text-2xl font-bold">
+                  {(profile?.nombre_completo?.split(" ").map(n => n[0]).join("").slice(0, 2) || profile?.email?.[0] || "?").toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Formatos: JPG, PNG, GIF. Máximo 2MB.
+                </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {photoPreview ? "Cambiar" : "Subir foto"}
+                  </Button>
+                  {photoPreview && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemovePhoto}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+            {photoPreview && photoPreview !== profile?.foto_perfil && (
+              <Button type="submit" variant="hero" size="sm">
+                Guardar foto
+              </Button>
+            )}
+          </form>
+        </SectionCard>
+
         <SectionCard title="Información personal">
           <form onSubmit={handleNameSubmit} className="space-y-4">
             <div className="space-y-1.5">

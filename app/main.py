@@ -846,6 +846,7 @@ async def get_mi_perfil(current_user: dict = Depends(get_current_user)):
         "rol": usuario["rol"],
         "nadadores_asignados": usuario.get("nadadores_asignados", []),
         "activo": usuario.get("activo", True),
+        "foto_perfil": usuario.get("foto_perfil"),
     }
 
 
@@ -858,7 +859,7 @@ async def update_mi_perfil(
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
     
-    allowed_fields = {"nombre_completo"}
+    allowed_fields = {"nombre_completo", "foto_perfil"}
     update_dict = {k: v for k, v in update_data.items() if k in allowed_fields}
     
     # Handle password change separately

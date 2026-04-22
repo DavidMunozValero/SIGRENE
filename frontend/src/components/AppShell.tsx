@@ -64,6 +64,7 @@ export function AppShell({ role }: { role: Role }) {
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState<string>(role);
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -76,6 +77,25 @@ export function AppShell({ role }: { role: Role }) {
       } catch (e) {
         console.error("Error decoding token", e);
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await api.getMiPerfil();
+        if (profile?.foto_perfil) {
+          setUserPhoto(profile.foto_perfil);
+        }
+        if (profile?.nombre_completo) {
+          setUserName(profile.nombre_completo);
+        }
+      } catch (e) {
+        console.error("Error loading profile:", e);
+      }
+    }
+    if (api.getToken()) {
+      loadProfile();
     }
   }, []);
 
@@ -162,9 +182,17 @@ export function AppShell({ role }: { role: Role }) {
                   <span className="text-sm font-medium text-foreground">{userName || userEmail || "Usuario"}</span>
                   <span className="text-xs text-muted-foreground">{ROLE_LABEL[userRole] || "Usuario"}</span>
                 </div>
-                <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
-                  {getUserInitials(userEmail, userName)}
-                </div>
+                {userPhoto ? (
+                  <img
+                    src={userPhoto}
+                    alt="Foto de perfil"
+                    className="h-9 w-9 rounded-full object-cover shadow-aqua"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
+                    {getUserInitials(userEmail, userName)}
+                  </div>
+                )}
               </button>
 
               {menuOpen && (
