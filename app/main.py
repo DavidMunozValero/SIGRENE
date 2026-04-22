@@ -859,31 +859,28 @@ async def update_mi_perfil(
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
     
-    allowed_fields = {"nombre_completo", "foto_perfil"}
-    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields and v is not None}
+    allowed_fields = {"nombre_completo", "foto_perfil", "password"}
+    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields}
     
-    if update_dict:
-        result = coleccion_usuarios.update_one(
-            {"email": current_user.get("sub")},
-            {"$set": update_dict}
-        )
-    elif "foto_perfil" in update_data and update_data["foto_perfil"] is None:
-        result = coleccion_usuarios.update_one(
-            {"email": current_user.get("sub")},
-            {"$set": {"foto_perfil": None}}
-        )
-    else:
+    if not update_dict:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se proporcionaron campos válidos para actualizar"
+            detail=f"FOTO_DEBUG: No se proporcionaron campos válidos. Datos recibidos: {list(update_data.keys())}"
         )
     
     # Handle password change separately
-    if "password" in update_data:
-        hashed_pwd = get_password_hash(update_data["password"])
+    if "password" in update_dict:
+        hashed_pwd = get_password_hash(update_dict.pop("password"))
         coleccion_usuarios.update_one(
             {"email": current_user.get("sub")},
             {"$set": {"hashed_password": hashed_pwd}}
+        )
+    
+    # Update other fields
+    if update_dict:
+        coleccion_usuarios.update_one(
+            {"email": current_user.get("sub")},
+            {"$set": update_dict}
         )
     
     return {"message": "Perfil actualizado correctamente"}
