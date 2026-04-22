@@ -188,7 +188,7 @@ class ApiClient {
     return this.request<any>("/usuarios/me");
   }
 
-  async updateMiPerfil(data: { nombre_completo?: string; password?: string }) {
+  async updateMiPerfil(data: { nombre_completo?: string; password?: string; foto_perfil?: string | null }) {
     return this.request<{ message: string }>("/usuarios/me", {
       method: "PUT",
       body: JSON.stringify(data),
