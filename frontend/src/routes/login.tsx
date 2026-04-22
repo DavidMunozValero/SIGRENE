@@ -4,7 +4,6 @@ import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
@@ -70,10 +69,7 @@ function LoginPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Contraseña</Label>
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">¿Olvidaste?</Link>
-          </div>
+          <Label htmlFor="password">Contraseña</Label>
           <Input
             id="password"
             type="password"
@@ -83,12 +79,8 @@ function LoginPage() {
             required
           />
         </div>
-
-        <div className="flex items-center gap-2">
-          <Checkbox id="remember" defaultChecked />
-          <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground cursor-pointer">
-            Mantener sesión iniciada (30 días)
-          </Label>
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
         </div>
 
         <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
