@@ -860,23 +860,31 @@ async def update_mi_perfil(
     coleccion_usuarios = db["usuarios"]
     
     allowed_fields = {"nombre_completo", "foto_perfil"}
-    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields}
+    update_dict = {k: v for k, v in update_data.items() if k in allowed_fields and v is not None}
     
-    # Handle password change separately
-    if "password" in update_data:
-        hashed_pwd = get_password_hash(update_data["password"])
-        update_dict["hashed_password"] = hashed_pwd
-    
-    if not update_dict:
+    if update_dict:
+        result = coleccion_usuarios.update_one(
+            {"email": current_user.get("sub")},
+            {"$set": update_dict}
+        )
+    elif "foto_perfil" in update_data and update_data["foto_perfil"] is None:
+        result = coleccion_usuarios.update_one(
+            {"email": current_user.get("sub")},
+            {"$set": {"foto_perfil": None}}
+        )
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se proporcionaron campos válidos para actualizar"
         )
     
-    result = coleccion_usuarios.update_one(
-        {"email": current_user.get("sub")},
-        {"$set": update_dict}
-    )
+    # Handle password change separately
+    if "password" in update_data:
+        hashed_pwd = get_password_hash(update_data["password"])
+        coleccion_usuarios.update_one(
+            {"email": current_user.get("sub")},
+            {"$set": {"hashed_password": hashed_pwd}}
+        )
     
     return {"message": "Perfil actualizado correctamente"}
 
