@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 
@@ -32,12 +32,12 @@ export const Route = createRootRoute({
       { name: "author", content: "SIGRENE" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Sigrene Lovable" },
-      { property: "og:title", content: "Sigrene Lovable" },
-      { name: "twitter:title", content: "Sigrene Lovable" },
-      { name: "description", content: "SIGRENE Launchpad is an online platform for managing sports federations and their members." },
-      { property: "og:description", content: "SIGRENE Launchpad is an online platform for managing sports federations and their members." },
-      { name: "twitter:description", content: "SIGRENE Launchpad is an online platform for managing sports federations and their members." },
+      { title: "SIGRENE" },
+      { property: "og:title", content: "SIGRENE" },
+      { name: "twitter:title", content: "SIGRENE" },
+      { name: "description", content: "SIGRENE - Plataforma federativa de natación" },
+      { property: "og:description", content: "SIGRENE - Plataforma federativa de natación" },
+      { name: "twitter:description", content: "SIGRENE - Plataforma federativa de natación" },
     ],
     links: [
       {
@@ -46,24 +46,9 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   return <Outlet />;
