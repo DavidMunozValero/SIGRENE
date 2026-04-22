@@ -42,8 +42,12 @@ class ApiClient {
 
   getDefaultRouteForRole(rol: string): string {
     switch (rol) {
-      case "admin":
+      case "superadmin":
         return "/app/admin";
+      case "admin_federacion":
+        return "/app/admin";
+      case "director_tecnico":
+        return "/app/director";
       case "director":
         return "/app/director";
       case "coach":
@@ -173,6 +177,28 @@ class ApiClient {
     return this.request<{ message: string }>("/usuarios/me", {
       method: "PUT",
       body: JSON.stringify(data),
+    });
+  }
+
+  // Admin - Registros pendientes
+  async getRegistrosPendientes() {
+    return this.request<{
+      total: number;
+      skip: number;
+      limit: number;
+      datos: any[];
+    }>("/admin/registros-pendientes");
+  }
+
+  async aprobarUsuario(email: string) {
+    return this.request<{ message: string; modified_count: number }>(`/admin/aprobar/${email}`, {
+      method: "POST",
+    });
+  }
+
+  async rechazarUsuario(email: string) {
+    return this.request<{ message: string; modified_count: number }>(`/admin/rechazar/${email}`, {
+      method: "POST",
     });
   }
 

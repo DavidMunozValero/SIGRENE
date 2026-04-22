@@ -17,21 +17,43 @@ interface Usuario {
   rol: string;
   nadadores_asignados: string[];
   activo: boolean;
+  estado_aprobacion: string;
+  aprobado_por?: string;
+  fecha_aprobacion?: string;
+  fecha_registro?: string;
   created_at?: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  superadmin: "Superadmin",
   admin: "Admin",
+  admin_federacion: "Admin Federación",
+  director_tecnico: "Director Técnico",
   director: "Director Técnico",
   coach: "Entrenador",
   swimmer: "Nadador",
 };
 
 const ROLE_COLORS: Record<string, string> = {
+  superadmin: "bg-red-500/15 text-red-400",
   admin: "bg-purple-500/15 text-purple-400",
+  admin_federacion: "bg-orange-500/15 text-orange-400",
+  director_tecnico: "bg-blue-500/15 text-blue-400",
   director: "bg-blue-500/15 text-blue-400",
   coach: "bg-aqua/15 text-primary",
   swimmer: "bg-green-500/15 text-green-400",
+};
+
+const ESTADO_COLORS: Record<string, string> = {
+  aprobado: "bg-green-500/15 text-green-400",
+  pendiente: "bg-yellow-500/15 text-yellow-400",
+  rechazado: "bg-red-500/15 text-red-400",
+};
+
+const ESTADO_LABELS: Record<string, string> = {
+  aprobado: "Aprobado",
+  pendiente: "Pendiente",
+  rechazado: "Rechazado",
 };
 
 function formatDate(dateStr?: string): string {
@@ -86,8 +108,9 @@ function EditUserModal({ user, onClose, onSave }: { user: Usuario; onClose: () =
               onChange={(e) => setFormData(prev => ({ ...prev, rol: e.target.value }))}
               className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
-              <option value="admin">Admin</option>
-              <option value="director">Director Técnico</option>
+              <option value="superadmin">Superadmin</option>
+              <option value="admin_federacion">Admin Federación</option>
+              <option value="director_tecnico">Director Técnico</option>
               <option value="coach">Entrenador</option>
               <option value="swimmer">Nadador</option>
             </select>
@@ -232,7 +255,8 @@ function UsersPage() {
               <tr>
                 <th className="text-left px-5 py-3">Usuario</th>
                 <th className="text-left px-5 py-3">Rol</th>
-                <th className="text-left px-5 py-3">Última conexión</th>
+                <th className="text-left px-5 py-3">Estado</th>
+                <th className="text-left px-5 py-3">Fecha registro</th>
                 <th className="text-right px-5 py-3">Acciones</th>
               </tr>
             </thead>
@@ -255,8 +279,13 @@ function UsersPage() {
                       {ROLE_LABELS[u.rol] || u.rol}
                     </span>
                   </td>
+                  <td className="px-5 py-4">
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${ESTADO_COLORS[u.estado_aprobacion] || "bg-muted text-muted-foreground"}`}>
+                      {ESTADO_LABELS[u.estado_aprobacion] || u.estado_aprobacion}
+                    </span>
+                  </td>
                   <td className="px-5 py-4 text-muted-foreground">
-                    {formatDate(u.created_at)}
+                    {formatDate(u.fecha_registro || u.created_at)}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="flex justify-end gap-2">

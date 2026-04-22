@@ -52,17 +52,12 @@ function Hero() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-28 md:pt-28 md:pb-40">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Plataforma federativa · v1
-          </span>
-          <h1 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground">
             La <span className="text-gradient-water">corriente</span> que mueve
             <br className="hidden sm:block" /> a tu federación de natación.
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-2xl">
-            Centraliza wellness, carga de entrenamiento y resultados de cada nadador.
-            Multi-tenant, con control de acceso por rol y diseñado para federaciones, clubes y entrenadores.
+            Plataforma para la gestión integral del rendimiento de nadadores. Centraliza el seguimiento diario, análisis de competición y control de carga de entrenamiento. Diseñada para federaciones, clubes, entrenadores y nadadores.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="hero" size="xl">
@@ -81,9 +76,9 @@ function Hero() {
 function Stats() {
   const items = [
     { v: "4 roles", l: "Jerarquía federativa" },
-    { v: "<200ms", l: "Latencia de auth" },
-    { v: "GDPR", l: "Cumplimiento nativo" },
-    { v: "JWT", l: "Sesiones seguras" },
+    { v: "Rendimiento", l: "Seguimiento diario" },
+    { v: "Métricas", l: "Análisis avanzado" },
+    { v: "RGPD", l: "Datos protegidos" },
   ];
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-16 relative z-10">
@@ -102,38 +97,33 @@ function Stats() {
 function Roles() {
   const roles = [
     {
-      title: "Federación Admin",
-      desc: "Crea la organización, invita entrenadores y configura ajustes de la federación.",
-      tag: "P1",
-    },
-    {
       title: "Director Técnico",
-      desc: "Dashboard agregado con KPIs federativos: ACWR medio, participación, tendencia.",
-      tag: "P2",
+      desc: "Dashboard agregado con KPIs federativos: métricas de rendimiento, participación y tendencia.",
+      tag: "Estrategia",
     },
     {
       title: "Entrenador",
-      desc: "Gestiona su grupo de nadadores, lee wellness y comparte informes con padres.",
-      tag: "P1",
+      desc: "Gestiona su grupo de nadadores, consulta rendimientos y comparte informes con familias.",
+      tag: "Operación",
     },
     {
       title: "Nadador",
-      desc: "Se registra por invitación y completa el wellness diario antes del entreno.",
-      tag: "P1",
+      desc: "Se registra por invitación y completa su seguimiento de forma diaria.",
+      tag: "Seguimiento",
     },
   ];
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-24">
+    <section id="roles" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-24">
       <div className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-wider text-primary">Jerarquía</p>
+        <p className="text-sm font-semibold uppercase tracking-wider text-primary">Roles</p>
         <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
-          Cuatro roles, una sola plataforma.
+          Tres perfiles, una misma plataforma.
         </h2>
         <p className="mt-3 text-muted-foreground">
           Acceso por capas con aislamiento de datos entre organizaciones y entre grupos del mismo entrenador.
         </p>
       </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {roles.map((r) => (
           <div
             key={r.title}
@@ -142,8 +132,16 @@ function Roles() {
             <div className="absolute -top-3 right-4 rounded-full bg-aqua/20 text-primary text-[10px] font-semibold px-2 py-1">
               {r.tag}
             </div>
-            <div className="h-10 w-10 rounded-xl bg-gradient-water grid place-items-center text-white shadow-aqua mb-4">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div className="h-12 w-12 rounded-xl bg-gradient-water grid place-items-center text-white shadow-aqua mb-4">
+              {r.title === "Director Técnico" && (
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              )}
+              {r.title === "Entrenador" && (
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              )}
+              {r.title === "Nadador" && (
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12c1.5-1.5 3-2 5-2s3.5.5 5 2 3 2 5 2 3.5-.5 5-2"/><path d="M2 17c1.5-1.5 3-2 5-2s3.5.5 5 2 3 2 5 2 3.5-.5 5-2"/><circle cx="8" cy="5" r="2"/><path d="m9 8-1.5 1.5"/></svg>
+              )}
             </div>
             <h3 className="font-semibold text-foreground">{r.title}</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">{r.desc}</p>
@@ -156,23 +154,23 @@ function Roles() {
 
 function Features() {
   const items = [
-    { t: "Multi-tenant nativo", d: "Aislamiento total de datos entre federaciones, con control de acceso por filas." },
-    { t: "Invitaciones seguras", d: "Tokens con expiración, reenvío y revocación desde el panel de admin." },
-    { t: "Sesiones JWT", d: "Tokens firmados con claims de organización y rol, refresco rotativo." },
-    { t: "Auditoría completa", d: "Cada login, logout o intento fallido queda registrado y consultable." },
-    { t: "Recuperación por email", d: "Enlaces de reset válidos 1h, invalidación automática de tokens previos." },
-    { t: "Rate limiting", d: "Bloqueo temporal tras 5 intentos fallidos para prevenir fuerza bruta." },
+    { t: "Organización por clubes", d: "Cada federación o club gestiona sus datos de forma independiente." },
+    { t: "Permisos por rol", d: "Cada usuario accede solo a la información que le corresponde." },
+    { t: "Seguimiento diario", d: "Cada nadador registra cada mañana cómo se encuentra antes del entreno." },
+    { t: "Control de carga", d: "Métricas para prevenir lesiones y optimizar el rendimiento de cada nadador." },
+    { t: "Análisis de competición", d: "Registro de tiempos, parciales y velocidad en cada tramo de la carrera." },
+    { t: "Informes", d: "Reportes visuales adaptados para cada tipo de usuario." },
   ];
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-28">
+    <section id="funcionalidades" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-28">
       <div className="grid lg:grid-cols-3 gap-10">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Auth & permisos</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Funcionalidades</p>
           <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
-            Seguridad pensada para datos sensibles.
+            Todo lo que tu federación necesita.
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Datos médicos y de menores requieren controles estrictos. SIGRENE incorpora desde el día uno los pilares que la federación necesita.
+            Herramientas prácticas para gestionar el rendimiento de nadadores desde la base hasta élite.
           </p>
         </div>
         <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
@@ -202,7 +200,7 @@ function CTA() {
               ¿Listos para zambullirse?
             </h2>
             <p className="mt-3 text-white/80">
-              Crea tu federación en menos de 5 minutos e invita al primer entrenador. Sin tarjetas, sin compromisos.
+              Crea tu federación e invita a tu primer entrenador para empezar a gestionar el rendimiento de tus nadadores.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -210,7 +208,7 @@ function CTA() {
               <Link to="/register">Empezar ahora</Link>
             </Button>
             <Button asChild variant="hero" size="xl">
-              <Link to="/contact">Hablar con ventas</Link>
+              <Link to="/login">Acceder</Link>
             </Button>
           </div>
         </div>

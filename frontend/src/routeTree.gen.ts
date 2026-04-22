@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RolesRouteImport } from './routes/roles'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InviteRouteImport } from './routes/invite'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -35,8 +37,14 @@ import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
 import { Route as AppAdminSettingsRouteImport } from './routes/app.admin.settings'
 import { Route as AppAdminRegisterTrainerRouteImport } from './routes/app.admin.register-trainer'
 import { Route as AppAdminPreviewRouteImport } from './routes/app.admin.preview'
+import { Route as AppAdminPendingRouteImport } from './routes/app.admin.pending'
 import { Route as AppAdminInvitationsRouteImport } from './routes/app.admin.invitations'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RolesRoute = RolesRouteImport.update({
   id: '/roles',
   path: '/roles',
@@ -45,6 +53,11 @@ const RolesRoute = RolesRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -167,6 +180,11 @@ const AppAdminPreviewRoute = AppAdminPreviewRouteImport.update({
   path: '/preview',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminPendingRoute = AppAdminPendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminInvitationsRoute = AppAdminInvitationsRouteImport.update({
   id: '/invitations',
   path: '/invitations',
@@ -180,13 +198,16 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/roles': typeof RolesRoute
+  '/terms': typeof TermsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/coach': typeof AppCoachRouteWithChildren
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
+  '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -209,9 +230,12 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/roles': typeof RolesRoute
+  '/terms': typeof TermsRoute
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
+  '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -235,13 +259,16 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/roles': typeof RolesRoute
+  '/terms': typeof TermsRoute
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/coach': typeof AppCoachRouteWithChildren
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
+  '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -266,13 +293,16 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/invite'
     | '/login'
+    | '/privacy'
     | '/register'
     | '/roles'
+    | '/terms'
     | '/app/admin'
     | '/app/coach'
     | '/app/director'
     | '/app/swimmer'
     | '/app/admin/invitations'
+    | '/app/admin/pending'
     | '/app/admin/preview'
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
@@ -295,9 +325,12 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/invite'
     | '/login'
+    | '/privacy'
     | '/register'
     | '/roles'
+    | '/terms'
     | '/app/admin/invitations'
+    | '/app/admin/pending'
     | '/app/admin/preview'
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
@@ -320,13 +353,16 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/invite'
     | '/login'
+    | '/privacy'
     | '/register'
     | '/roles'
+    | '/terms'
     | '/app/admin'
     | '/app/coach'
     | '/app/director'
     | '/app/swimmer'
     | '/app/admin/invitations'
+    | '/app/admin/pending'
     | '/app/admin/preview'
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
@@ -350,8 +386,10 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   RolesRoute: typeof RolesRoute
+  TermsRoute: typeof TermsRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCoachRoute: typeof AppCoachRouteWithChildren
   AppDirectorRoute: typeof AppDirectorRouteWithChildren
@@ -360,6 +398,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/roles': {
       id: '/roles'
       path: '/roles'
@@ -372,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -542,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminPreviewRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/pending': {
+      id: '/app/admin/pending'
+      path: '/pending'
+      fullPath: '/app/admin/pending'
+      preLoaderRoute: typeof AppAdminPendingRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/app/admin/invitations': {
       id: '/app/admin/invitations'
       path: '/invitations'
@@ -554,6 +613,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
+  AppAdminPendingRoute: typeof AppAdminPendingRoute
   AppAdminPreviewRoute: typeof AppAdminPreviewRoute
   AppAdminRegisterTrainerRoute: typeof AppAdminRegisterTrainerRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
@@ -563,6 +623,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminInvitationsRoute: AppAdminInvitationsRoute,
+  AppAdminPendingRoute: AppAdminPendingRoute,
   AppAdminPreviewRoute: AppAdminPreviewRoute,
   AppAdminRegisterTrainerRoute: AppAdminRegisterTrainerRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
@@ -629,8 +690,10 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   RolesRoute: RolesRoute,
+  TermsRoute: TermsRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCoachRoute: AppCoachRouteWithChildren,
   AppDirectorRoute: AppDirectorRouteWithChildren,

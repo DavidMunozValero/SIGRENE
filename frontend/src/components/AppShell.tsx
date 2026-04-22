@@ -4,23 +4,44 @@ import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
-export type Role = "admin" | "director" | "coach" | "swimmer";
+export type Role = "admin" | "superadmin" | "director" | "coach" | "swimmer";
 
-const ROLE_LABEL: Record<Role, string> = {
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: "Superadmin",
   admin: "Federación Admin",
+  admin_federacion: "Admin Federación",
+  director_tecnico: "Director Técnico",
   director: "Director Técnico",
   coach: "Entrenador",
   swimmer: "Nadador",
 };
 
-const NAV: Record<Role, { label: string; to: string }[]> = {
+const NAV: Record<string, { label: string; to: string }[]> = {
+  superadmin: [
+    { label: "Resumen", to: "/app/admin" },
+    { label: "Usuarios", to: "/app/admin/users" },
+    { label: "Solicitudes Pendientes", to: "/app/admin/pending" },
+    { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
+    { label: "Vista Previa", to: "/app/admin/preview" },
+  ],
   admin: [
     { label: "Resumen", to: "/app/admin" },
     { label: "Usuarios", to: "/app/admin/users" },
     { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
     { label: "Vista Previa", to: "/app/admin/preview" },
   ],
+  admin_federacion: [
+    { label: "Resumen", to: "/app/admin" },
+    { label: "Usuarios", to: "/app/admin/users" },
+    { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
+    { label: "Vista Previa", to: "/app/admin/preview" },
+  ],
   director: [
+    { label: "Dashboard", to: "/app/director" },
+    { label: "Grupos", to: "/app/director/groups" },
+    { label: "Informes", to: "/app/director/reports" },
+  ],
+  director_tecnico: [
     { label: "Dashboard", to: "/app/director" },
     { label: "Grupos", to: "/app/director/groups" },
     { label: "Informes", to: "/app/director/reports" },
@@ -54,6 +75,7 @@ export function AppShell({ role }: { role: Role }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState<string>(role);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +84,7 @@ export function AppShell({ role }: { role: Role }) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUserEmail(payload.sub || "");
+        setUserRole(payload.rol || role);
       } catch (e) {
         console.error("Error decoding token", e);
       }
@@ -101,7 +124,7 @@ export function AppShell({ role }: { role: Role }) {
         <div className="px-3 py-4">
           <p className="px-3 text-xs uppercase tracking-wider text-white/50 mb-2">Menú</p>
           <nav className="space-y-1">
-            {NAV[role].map((item) => {
+            {(NAV[userRole] || NAV.admin).map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
@@ -139,7 +162,7 @@ export function AppShell({ role }: { role: Role }) {
             </button>
             <div className="hidden lg:flex items-center gap-2">
               <span className="text-xs uppercase tracking-wider text-muted-foreground">Conectado como</span>
-              <span className="text-sm font-semibold text-foreground">{ROLE_LABEL[role]}</span>
+              <span className="text-sm font-semibold text-foreground">{ROLE_LABEL[userRole] || ROLE_LABEL.admin}</span>
             </div>
             <div className="relative" ref={menuRef}>
               <button
@@ -149,7 +172,7 @@ export function AppShell({ role }: { role: Role }) {
               >
                 <div className="hidden sm:flex flex-col items-end leading-tight">
                   <span className="text-sm font-medium text-foreground">{userName || userEmail || "Usuario"}</span>
-                  <span className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</span>
+                  <span className="text-xs text-muted-foreground">{ROLE_LABEL[userRole] || ROLE_LABEL.admin}</span>
                 </div>
                 <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
                   {getUserInitials(userEmail, userName)}

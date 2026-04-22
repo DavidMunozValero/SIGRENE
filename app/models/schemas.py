@@ -20,6 +20,20 @@ class EstiloEnum(str, Enum):
     MEDLEY_RELAY = "medley_relay"
 
 
+class RolUsuarioEnum(str, Enum):
+    SUPERADMIN = "superadmin"
+    ADMIN_FEDERACION = "admin_federacion"
+    DIRECTOR_TECNICO = "director_tecnico"
+    COACH = "coach"
+    SWIMMER = "swimmer"
+
+
+class EstadoAprobacionEnum(str, Enum):
+    PENDIENTE = "pendiente"
+    APROBADO = "aprobado"
+    RECHAZADO = "rechazado"
+
+
 class EmergencyContact(BaseModel):
     nombre: str = Field(..., description='Nombre del contacto de emergencia')
     telefono: str = Field(..., description='Teléfono de emergencia')
@@ -226,6 +240,22 @@ class UsuarioCreate(UsuarioBase):
 class UsuarioInDB(UsuarioBase):
     hashed_password: str = Field(..., description='Contraseña encriptada (Bcrypt)')
     activo: bool = Field(default=True, description='Estado de la cuenta')
+    estado_aprobacion: str = Field(
+        default="aprobado",
+        description='Estado de aprobación: pendiente, aprobado, rechazado'
+    )
+    aprobado_por: Optional[str] = Field(
+        default=None,
+        description='Email del superadmin que aprobó el registro'
+    )
+    fecha_aprobacion: Optional[datetime] = Field(
+        default=None,
+        description='Fecha de aprobación'
+    )
+    fecha_registro: Optional[datetime] = Field(
+        default=None,
+        description='Fecha de registro'
+    )
 
 
 class Token(BaseModel):

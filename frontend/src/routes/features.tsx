@@ -6,9 +6,9 @@ export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
       { title: "Funcionalidades — SIGRENE" },
-      { name: "description", content: "Auth y permisos, multi-tenant, invitaciones, JWT, auditoría y GDPR en SIGRENE." },
+      { name: "description", content: "Gestión de nadadores, seguimiento diario, control de carga y análisis de competición para federaciones y clubes." },
       { property: "og:title", content: "Funcionalidades — SIGRENE" },
-      { property: "og:description", content: "Auth, permisos por rol, multi-tenant, JWT y auditoría completa." },
+      { property: "og:description", content: "Herramientas para gestionar el rendimiento de nadadores." },
     ],
   }),
   component: FeaturesPage,
@@ -16,36 +16,36 @@ export const Route = createFileRoute("/features")({
 
 const blocks = [
   {
-    title: "Multi-tenant con aislamiento por organización",
-    body: "Cada federación opera en su propio espacio lógico. Las consultas se filtran por organization_id en todas las capas, garantizando que los datos no se mezclen jamás.",
+    title: "Organización por clubes",
+    body: "Cada federación o club gestiona sus datos de forma independiente, con acceso privado y seguro.",
   },
   {
-    title: "Control de acceso por rol y por grupo",
-    body: "Federation Admin > Director Técnico > Entrenador > Nadador. Un entrenador solo accede a sus nadadores; un nadador solo a sus propios datos.",
+    title: "Permisos por rol",
+    body: "Directores, entrenadores y nadadores acceden solo a la información que les corresponde.",
   },
   {
-    title: "Invitaciones por email con expiración",
-    body: "Tokens de invitación firmados con expiración configurable. Reenvío y revocación desde el panel administrativo en un click.",
+    title: "Seguimiento diario",
+    body: "Cada nadador puede realizar cuestionarios diarios o periódicos. Los entrenadores pueden consultar el estado de todo su grupo.",
   },
   {
-    title: "Autenticación con JWT y refresh rotativo",
-    body: "Tokens cortos (15 min) con refresh rotativo y opción 'remember me' a 30 días. Claims con user_id, organization_id y role.",
+    title: "Control de carga",
+    body: "Métricas para prevenir lesiones y optimizar el rendimiento de cada nadador a lo largo del tiempo.",
   },
   {
-    title: "Recuperación de contraseña segura",
-    body: "Enlaces de reset válidos 1 hora, un solo uso, invalidación automática del resto de tokens del usuario.",
+    title: "Análisis de competición",
+    body: "Registro de tiempos de carrera. Análisis de imágenes.",
   },
   {
-    title: "Rate limiting y bloqueo de cuentas",
-    body: "Tras 5 intentos fallidos en 15 minutos la cuenta se bloquea automáticamente. Previene ataques de fuerza bruta.",
+    title: "Informes",
+    body: "Reportes visuales adaptados para cada tipo de usuario que permiten seguir la evolución de cada nadador.",
   },
   {
-    title: "Auditoría inmutable",
-    body: "Todo evento de autenticación queda registrado con IP, user agent y timestamp. Consultable por admins federativos.",
+    title: "Gestión de nadadores",
+    body: "Registro completo de cada nadador con datos personales, rendimiento histórico y asignación a grupos de entrenamiento.",
   },
   {
-    title: "Cumplimiento GDPR",
-    body: "Derecho de acceso, rectificación, portabilidad y borrado. Export de datos personales en JSON estándar.",
+    title: "Privacidad de datos",
+    body: "Cumplimiento con la normativa de protección de datos. Cada usuario gestiona sus propios datos de forma segura.",
   },
 ];
 
@@ -55,12 +55,12 @@ function FeaturesPage() {
       <SiteHeader />
       <main className="flex-1 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Funcionalidades v1</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Funcionalidades</p>
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
-            Todo lo que tu federación necesita para empezar.
+            Todo lo que tu federación necesita.
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            La primera versión de SIGRENE cubre los pilares de autenticación, autorización y onboarding multi-tenant. Listos para escalar a wellness, carga y resultados.
+            Herramientas prácticas para gestionar el rendimiento de nadadores desde la base hasta la élite.
           </p>
         </div>
 

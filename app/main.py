@@ -462,6 +462,9 @@ async def registrar_usuario(usuario: UsuarioCreate):
     Validates that the email is not already in use, hashes the password
     securely, and stores the user profile in MongoDB.
 
+    Los roles admin_federacion quedan pendientes de aprobación por un superadmin.
+    Los roles coach y swimmer se approved automáticamente.
+
     Args:
         usuario (UsuarioCreate): The user data including the plain password.
 
@@ -484,17 +487,30 @@ async def registrar_usuario(usuario: UsuarioCreate):
     # 2. Hash the password
     hashed_pwd = get_password_hash(usuario.password)
 
-    # 3. Prepare the DB document (exclude plain password, include hashed)
+    # 3. Determine approval status based on role
+    # admin_federacion requires superadmin approval, others are auto-approved
+    rol_requiere_aprobacion = usuario.rol == "admin_federacion"
+    estado = "pendiente" if rol_requiere_aprobacion else "aprobado"
+
+    # 4. Prepare the DB document (exclude plain password, include hashed)
     usuario_db = UsuarioInDB(
         email=usuario.email,
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
         nadadores_asignados=usuario.nadadores_asignados,
-        hashed_password=hashed_pwd
+        hashed_password=hashed_pwd,
+        estado_aprobacion=estado,
+        fecha_registro=datetime.utcnow()
     )
 
-    # 4. Insert into MongoDB
+    # 5. Insert into MongoDB
     coleccion_usuarios.insert_one(usuario_db.model_dump())
+
+    if estado == "pendiente":
+        return {
+            "message": f"El usuario {usuario.email} ha sido registrado. Su cuenta está pendiente de aprobación por un administrador.",
+            "estado_aprobacion": estado
+        }
 
     return {"message": f"Usuario {usuario.email} registrado correctamente."}
 
@@ -505,6 +521,10 @@ class UsuarioResponse(BaseModel):
     rol: str
     nadadores_asignados: List[str]
     activo: bool
+    estado_aprobacion: str
+    aprobado_por: Optional[str] = None
+    fecha_aprobacion: Optional[datetime] = None
+    fecha_registro: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
 
@@ -520,14 +540,15 @@ async def list_usuarios(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     rol: Optional[str] = Query(default=None, description="Filtrar por rol"),
+    estado_aprobacion: Optional[str] = Query(default=None, description="Filtrar por estado de aprobación"),
     current_user: dict = Depends(get_current_user)
 ):
-    """List all users (admin only).
+    """List all users (superadmin only).
 
     Returns a paginated list of all users in the system.
-    Only accessible by admin users.
+    Only accessible by superadmin users.
     """
-    if current_user.get("rol") != "admin":
+    if current_user.get("rol") not in ["admin", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden ver la lista de usuarios"
@@ -539,6 +560,8 @@ async def list_usuarios(
     query = {}
     if rol:
         query["rol"] = rol
+    if estado_aprobacion:
+        query["estado_aprobacion"] = estado_aprobacion
 
     total = coleccion_usuarios.count_documents(query)
     cursor = coleccion_usuarios.find(query, {"hashed_password": 0}).skip(skip).limit(limit)
@@ -551,6 +574,10 @@ async def list_usuarios(
             rol=doc["rol"],
             nadadores_asignados=doc.get("nadadores_asignados", []),
             activo=doc.get("activo", True),
+            estado_aprobacion=doc.get("estado_aprobacion", "aprobado"),
+            aprobado_por=doc.get("aprobado_por"),
+            fecha_aprobacion=doc.get("fecha_aprobacion"),
+            fecha_registro=doc.get("fecha_registro"),
             created_at=doc.get("created_at")
         ))
 
@@ -559,6 +586,155 @@ async def list_usuarios(
         skip=skip,
         limit=limit,
         datos=usuarios
+    )
+
+
+@app.get("/api/v1/admin/registros-pendientes", response_model=UsuarioListResponse)
+async def list_registros_pendientes(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: dict = Depends(get_current_user)
+):
+    """List all pending registrations (superadmin only).
+
+    Returns a paginated list of users with estado_aprobacion = 'pendiente'.
+    Only accessible by superadmin users.
+    """
+    if current_user.get("rol") not in ["admin", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden ver los registros pendientes"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    query = {"estado_aprobacion": "pendiente"}
+    total = coleccion_usuarios.count_documents(query)
+    cursor = coleccion_usuarios.find(query, {"hashed_password": 0}).skip(skip).limit(limit)
+    
+    usuarios = []
+    for doc in cursor:
+        usuarios.append(UsuarioResponse(
+            email=doc["email"],
+            nombre_completo=doc["nombre_completo"],
+            rol=doc["rol"],
+            nadadores_asignados=doc.get("nadadores_asignados", []),
+            activo=doc.get("activo", True),
+            estado_aprobacion=doc.get("estado_aprobacion", "pendiente"),
+            aprobado_por=doc.get("aprobado_por"),
+            fecha_aprobacion=doc.get("fecha_aprobacion"),
+            fecha_registro=doc.get("fecha_registro"),
+            created_at=doc.get("created_at")
+        ))
+
+    return UsuarioListResponse(
+        total=total,
+        skip=skip,
+        limit=limit,
+        datos=usuarios
+    )
+
+
+@app.post("/api/v1/admin/aprobar/{email}", response_model=UpdateResponse)
+async def aprobar_usuario(
+    email: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Approve a pending user registration (superadmin only).
+
+    Changes the user's estado_aprobacion from 'pendiente' to 'aprobado'.
+    Only accessible by superadmin users.
+    """
+    if current_user.get("rol") not in ["admin", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden aprobar registros"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    # Find the user
+    usuario = coleccion_usuarios.find_one({"email": email})
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontró el usuario con email {email}"
+        )
+
+    if usuario.get("estado_aprobacion") != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El usuario {email} no está pendiente de aprobación"
+        )
+
+    # Update the user
+    result = coleccion_usuarios.update_one(
+        {"email": email},
+        {
+            "$set": {
+                "estado_aprobacion": "aprobado",
+                "aprobado_por": current_user.get("email"),
+                "fecha_aprobacion": datetime.utcnow()
+            }
+        }
+    )
+
+    return UpdateResponse(
+        message=f"Usuario {email} aprobado correctamente",
+        modified_count=result.modified_count
+    )
+
+
+@app.post("/api/v1/admin/rechazar/{email}", response_model=UpdateResponse)
+async def rechazar_usuario(
+    email: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Reject a pending user registration (superadmin only).
+
+    Changes the user's estado_aprobacion from 'pendiente' to 'rechazado'.
+    Only accessible by superadmin users.
+    """
+    if current_user.get("rol") not in ["admin", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden rechazar registros"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    # Find the user
+    usuario = coleccion_usuarios.find_one({"email": email})
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontró el usuario con email {email}"
+        )
+
+    if usuario.get("estado_aprobacion") != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El usuario {email} no está pendiente de aprobación"
+        )
+
+    # Update the user
+    result = coleccion_usuarios.update_one(
+        {"email": email},
+        {
+            "$set": {
+                "estado_aprobacion": "rechazado",
+                "aprobado_por": current_user.get("email"),
+                "fecha_aprobacion": datetime.utcnow()
+            }
+        }
+    )
+
+    return UpdateResponse(
+        message=f"Usuario {email} rechazado correctamente",
+        modified_count=result.modified_count
     )
 
 
@@ -710,6 +886,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
     Verifies the provided email and password against the MongoDB database.
     If valid, generates a signed JWT containing the user's email and role.
+    Users with estado_aprobacion 'pendiente' or 'rechazado' cannot login.
 
     Args:
         form_data (OAuth2PasswordRequestForm): Standard OAuth2 form containing
@@ -719,7 +896,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         Token: The JWT access token and token type.
 
     Raises:
-        HTTPException: If authentication fails (wrong email or password).
+        HTTPException: If authentication fails (wrong email or password) or
+            if the user is not approved.
     """
     db = DatabaseClient.get_db()
 
@@ -734,7 +912,23 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 3. Generate the JWT Token
+    # 3. Check approval status
+    estado = usuario_db.get("estado_aprobacion", "aprobado")
+    if estado == "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu cuenta está pendiente de aprobación por un administrador.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if estado == "rechazado":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu cuenta ha sido rechazada. Contacta con un administrador.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 4. Generate the JWT Token
     access_token = create_access_token(
         data={"sub": usuario_db["email"], "rol": usuario_db["rol"]}
     )
