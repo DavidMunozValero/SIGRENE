@@ -748,7 +748,7 @@ async def update_usuario(
 
     Allows admin to change user roles or deactivate users.
     """
-    if current_user.get("rol") != "admin":
+    if current_user.get("rol") not in ["admin", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden modificar usuarios"
