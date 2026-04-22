@@ -44,7 +44,7 @@ def _sanitize_for_mongo(data: dict) -> dict:
 
 def _check_swimmer_access(db, nadador_id: str, coach_id: str, user_role: str) -> bool:
     """Check if coach has access to swimmer. Returns True if access granted, False otherwise."""
-    if user_role == "admin":
+    if user_role in ["admin_federacion", "superadmin"]:
         return True
     
     nadador = db["nadadores"].find_one({
@@ -59,7 +59,7 @@ def _check_swimmer_access(db, nadador_id: str, coach_id: str, user_role: str) ->
 
 def _get_coach_swimmer_ids(db, coach_id: str, user_role: str) -> List[str]:
     """Get list of swimmer IDs that coach has access to."""
-    if user_role == "admin":
+    if user_role in ["admin_federacion", "superadmin"]:
         swimmers = db["nadadores"].find({}, {"pseudonym": 1, "id_seudonimo": 1})
         return [s.get("pseudonym") or s["id_seudonimo"] for s in swimmers]
     
@@ -146,7 +146,7 @@ async def list_registros_diarios(
     query = {}
     
     # Access control: filter by coach's swimmers
-    if user_role != "admin" and not nadador_id:
+    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return RegistroDiarioListResponse(total=0, skip=skip, limit=limit, registros=[])
@@ -154,7 +154,7 @@ async def list_registros_diarios(
 
     if nadador_id:
         # Check access to specific swimmer
-        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -213,14 +213,14 @@ async def get_dashboard_stats(
     query = {}
     
     # Access control
-    if user_role != "admin" and not nadador_id:
+    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return DashboardStats()
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -346,7 +346,7 @@ async def get_registro_diario(
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
 
     return RegistroDiarioResponse(
@@ -385,7 +385,7 @@ async def get_registros_by_nadador(
     db = DatabaseClient.get_db()
 
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     coleccion = db["registros_diarios"]
@@ -425,7 +425,7 @@ async def create_registro_diario(
         user_role = current_user.get("rol", "coach")
 
         # Access control
-        if user_role != "admin" and not _check_swimmer_access(
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
             DatabaseClient.get_db(), registro.nadador_id, coach_id, user_role
         ):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -548,7 +548,7 @@ async def list_usuarios(
     Returns a paginated list of all users in the system.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin", "superadmin"]:
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden ver la lista de usuarios"
@@ -600,7 +600,7 @@ async def list_registros_pendientes(
     Returns a paginated list of users with estado_aprobacion = 'pendiente'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin", "superadmin"]:
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden ver los registros pendientes"
@@ -646,7 +646,7 @@ async def aprobar_usuario(
     Changes the user's estado_aprobacion from 'pendiente' to 'aprobado'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin", "superadmin"]:
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden aprobar registros"
@@ -697,7 +697,7 @@ async def rechazar_usuario(
     Changes the user's estado_aprobacion from 'pendiente' to 'rechazado'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin", "superadmin"]:
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden rechazar registros"
@@ -748,7 +748,7 @@ async def update_usuario(
 
     Allows admin to change user roles or deactivate users.
     """
-    if current_user.get("rol") not in ["admin", "superadmin"]:
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden modificar usuarios"
@@ -793,7 +793,7 @@ async def delete_usuario(
 
     This is a hard delete - the user will be permanently removed.
     """
-    if current_user.get("rol") != "admin":
+    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden eliminar usuarios"
@@ -1027,7 +1027,7 @@ async def create_control_fisiologico(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), control.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1058,14 +1058,14 @@ async def list_controles_fisiologicos(
     query = {}
     
     # Access control
-    if user_role != "admin" and not nadador_id:
+    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -1109,7 +1109,7 @@ async def create_composicion_corporal(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), composicion.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1133,14 +1133,14 @@ async def list_composicion_corporal(
     query = {}
     
     # Access control
-    if user_role != "admin" and not nadador_id:
+    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -1181,7 +1181,7 @@ async def create_analisis_competicion(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), analisis.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1206,14 +1206,14 @@ async def list_analisis_competicion(
     query = {}
     
     # Access control
-    if user_role != "admin" and not nadador_id:
+    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
     
@@ -1272,7 +1272,7 @@ async def get_acwr_history(
     db = DatabaseClient.get_db()
     
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     coleccion = db["registros_diarios"]
@@ -1449,7 +1449,7 @@ async def list_nadadores(
     query = {}
     
     # Access control: admin sees all, coaches see only their swimmers
-    if user_role != "admin":
+    if user_role not in ["admin_federacion", "superadmin"]:
         query["coach_id"] = coach_id
     
     if not include_archived:
@@ -1494,7 +1494,7 @@ async def get_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role != "admin" and doc.get("coach_id") != coach_id:
+    if user_role not in ["admin_federacion", "superadmin"] and doc.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     return _get_nadador_response(doc, db)
@@ -1521,7 +1521,7 @@ async def update_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role != "admin" and existing.get("coach_id") != coach_id:
+    if user_role not in ["admin_federacion", "superadmin"] and existing.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     update_data = _sanitize_for_mongo(nadador.model_dump(exclude_none=True))
@@ -1573,7 +1573,7 @@ async def delete_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role != "admin" and existing.get("coach_id") != coach_id:
+    if user_role not in ["admin_federacion", "superadmin"] and existing.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     # Check if swimmer has historical data
@@ -1779,7 +1779,7 @@ async def delete_registro_diario(
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
     # Access control
-    if user_role != "admin" and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
 
     result = db["registros_diarios"].delete_one({"_id": obj_id})

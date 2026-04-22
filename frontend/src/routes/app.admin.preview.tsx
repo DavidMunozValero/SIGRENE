@@ -17,13 +17,19 @@ interface Usuario {
 }
 
 const ROLE_INFO = {
-  admin: {
-    label: "Administrador",
-    description: "Acceso total al sistema. Gestiona usuarios, federation settings y ve todos los datos.",
-    routes: ["/app/admin", "/app/admin/users", "/app/admin/register-trainer", "/app/admin/register-swimmer"],
-    color: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  superadmin: {
+    label: "Superadmin",
+    description: "Acceso total al sistema. Gestiona usuarios, configuración y todos los datos.",
+    routes: ["/app/admin", "/app/admin/users", "/app/admin/settings", "/app/admin/pending"],
+    color: "bg-red-500/15 text-red-400 border-red-500/30",
   },
-  director: {
+  admin_federacion: {
+    label: "Admin Federación",
+    description: "Acceso federativo completo. Gestiona nadadores y ve datos agregados.",
+    routes: ["/app/admin", "/app/admin/users", "/app/admin/settings"],
+    color: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  },
+  director_tecnico: {
     label: "Director Técnico",
     description: "Acceso al dashboard de dirección, grupos de entrenamiento e informes.",
     routes: ["/app/director", "/app/director/groups", "/app/director/reports"],
@@ -62,8 +68,9 @@ function PreviewPage() {
   }, []);
 
   const usuariosByRol = {
-    admin: usuarios.filter(u => u.rol === "admin"),
-    director: usuarios.filter(u => u.rol === "director"),
+    superadmin: usuarios.filter(u => u.rol === "superadmin"),
+    admin_federacion: usuarios.filter(u => u.rol === "admin_federacion"),
+    director_tecnico: usuarios.filter(u => u.rol === "director_tecnico"),
     coach: usuarios.filter(u => u.rol === "coach"),
     swimmer: usuarios.filter(u => u.rol === "swimmer"),
   };
@@ -118,7 +125,7 @@ function PreviewPage() {
 
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                      Usuarios {rol === "admin" ? "" : "(prueba con estos)"}
+                      Usuarios {rol === "superadmin" || rol === "admin_federacion" ? "" : "(prueba con estos)"}
                     </p>
                     {isLoading ? (
                       <p className="text-sm text-muted-foreground">Cargando...</p>
@@ -166,7 +173,7 @@ function PreviewPage() {
             <p className="text-xs text-muted-foreground mb-3">Credenciales de prueba comunes:</p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { rol: "Admin", email: "admin@sigrene.es" },
+                { rol: "Superadmin", email: "admin@sigrene.com" },
                 { rol: "Entrenador", email: "carlos@fnm.es" },
                 { rol: "Nadador", email: "maria@club.es" },
               ].map(c => (

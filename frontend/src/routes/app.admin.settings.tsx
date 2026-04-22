@@ -142,7 +142,7 @@ function SettingsPage() {
             <div className="space-y-1.5">
               <Label>Rol</Label>
               <Input
-                value={profile?.rol === "admin" ? "Administrador" : profile?.rol === "director" ? "Director Técnico" : profile?.rol === "coach" ? "Entrenador" : "Nadador"}
+                value={profile?.rol === "superadmin" ? "Superadmin" : profile?.rol === "admin_federacion" ? "Admin Federación" : profile?.rol === "director_tecnico" ? "Director Técnico" : profile?.rol === "coach" ? "Entrenador" : profile?.rol === "swimmer" ? "Nadador" : profile?.rol}
                 disabled
                 className="bg-muted"
               />

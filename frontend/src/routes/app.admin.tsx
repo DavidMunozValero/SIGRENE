@@ -2,5 +2,5 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/app/admin")({
-  component: () => <AppShell role="admin" />,
+  component: () => <AppShell role="admin_federacion" />,
 });

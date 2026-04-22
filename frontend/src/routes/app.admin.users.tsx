@@ -26,20 +26,16 @@ interface Usuario {
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: "Superadmin",
-  admin: "Admin",
   admin_federacion: "Admin Federación",
   director_tecnico: "Director Técnico",
-  director: "Director Técnico",
   coach: "Entrenador",
   swimmer: "Nadador",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   superadmin: "bg-red-500/15 text-red-400",
-  admin: "bg-purple-500/15 text-purple-400",
   admin_federacion: "bg-orange-500/15 text-orange-400",
   director_tecnico: "bg-blue-500/15 text-blue-400",
-  director: "bg-blue-500/15 text-blue-400",
   coach: "bg-aqua/15 text-primary",
   swimmer: "bg-green-500/15 text-green-400",
 };

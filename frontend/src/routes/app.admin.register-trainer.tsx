@@ -12,8 +12,9 @@ export const Route = createFileRoute("/app/admin/register-trainer")({
 });
 
 const ROLES = [
-  { value: "admin", label: "Administrador", description: "Acceso total al sistema" },
-  { value: "director", label: "Director Técnico", description: "Dashboard agregado e informes" },
+  { value: "superadmin", label: "Superadmin", description: "Acceso total al sistema" },
+  { value: "admin_federacion", label: "Admin Federación", description: "Gestión federativa" },
+  { value: "director_tecnico", label: "Director Técnico", description: "Dashboard agregado e informes" },
   { value: "coach", label: "Entrenador", description: "Gestión de nadadores" },
   { value: "swimmer", label: "Nadador", description: "Panel personal" },
 ];
