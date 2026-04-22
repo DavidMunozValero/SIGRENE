@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException, Depends, status, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
@@ -880,20 +880,22 @@ async def update_mi_perfil(
     return {"message": "Perfil actualizado correctamente"}
 
 
-@app.post("/api/v1/login", response_model=Token)
+@app.post("/api/v1/login")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """Authenticates a user and returns a JWT access token.
 
     Verifies the provided email and password against the MongoDB database.
     If valid, generates a signed JWT containing the user's email and role.
     Users with estado_aprobacion 'pendiente' or 'rechazado' cannot login.
+    
+    Sets a httpOnly cookie for session management (RGPD compliant).
 
     Args:
         form_data (OAuth2PasswordRequestForm): Standard OAuth2 form containing
             'username' (which we use for email) and 'password'.
 
     Returns:
-        Token: The JWT access token and token type.
+        JSON with access_token and token_type.
 
     Raises:
         HTTPException: If authentication fails (wrong email or password) or
@@ -933,7 +935,25 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": usuario_db["email"], "rol": usuario_db["rol"]}
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    # 5. Set httpOnly cookie for session management
+    response = JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
+    response.set_cookie(
+        key="sigrene_session",
+        value=access_token,
+        max_age=60 * 60 * 24 * 30,  # 30 days
+        httponly=True,
+        secure=True,
+        samesite="lax",
+    )
+    return response
+
+
+@app.post("/api/v1/logout")
+async def logout():
+    """Logs out the user by clearing the session cookie."""
+    response = JSONResponse(content={"message": "Sesión cerrada correctamente"})
+    response.delete_cookie(key="sigrene_session")
+    return response
 
 
 class PasswordRecoveryRequest(BaseModel):

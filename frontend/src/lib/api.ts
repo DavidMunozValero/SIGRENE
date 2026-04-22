@@ -19,6 +19,21 @@ class ApiClient {
   clearToken() {
     this.token = null;
     localStorage.removeItem("sigrene_token");
+    if (typeof document !== "undefined") {
+      document.cookie = "sigrene_session=; max-age=0; path=/";
+    }
+  }
+
+  async logout() {
+    try {
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    this.clearToken();
   }
 
   getToken() {

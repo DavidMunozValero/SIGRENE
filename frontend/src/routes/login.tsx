@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,26 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    async function checkExistingSession() {
+      const token = api.getToken();
+      if (token) {
+        try {
+          const profile = await api.getMiPerfil();
+          const role = profile?.rol || api.getUserRole() || "coach";
+          const redirectTo = api.getDefaultRouteForRole(role);
+          navigate({ to: redirectTo });
+          return;
+        } catch {
+          api.clearToken();
+        }
+      }
+      setIsCheckingSession(false);
+    }
+    checkExistingSession();
+  }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +59,10 @@ function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isCheckingSession) {
+    return null;
+  }
 
   return (
     <AuthShell

@@ -7,10 +7,11 @@ using bcrypt and generating JSON Web Tokens (JWT) for user sessions.
 
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
+from typing import Optional
 
 import jwt
 import os
@@ -24,6 +25,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "super_secret_key_for_development_only_change_me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours (typical work day)
+COOKIE_NAME = "sigrene_session"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days in seconds
 
 # Initialize the password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -84,14 +87,22 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+async def get_current_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    session_cookie: Optional[str] = Cookie(None, alias=COOKIE_NAME)
+) -> dict:
     """Validates the JWT token and extracts the user payload.
 
     This function acts as a dependency for protected endpoints. It decodes
     the token and ensures it is valid and has not expired.
+    
+    Accepts token from either:
+    - Authorization header (Bearer token)
+    - sigrene_session cookie (httpOnly)
 
     Args:
-        token (str): The JWT bearer token extracted from the request header.
+        token (str | None): The JWT bearer token extracted from the request header.
+        session_cookie (str | None): The session cookie containing the JWT.
 
     Returns:
         dict: The decoded payload containing user information (e.g., 'sub', 'rol').
@@ -104,9 +115,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         detail="Credenciales inválidas o token caducado",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Use cookie token if no bearer token provided
+    active_token = token if token else session_cookie
+    
+    if not active_token:
+        raise credentials_exception
+        
     try:
-        # Intentamos decodificar el token con nuestra llave maestra
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(active_token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception

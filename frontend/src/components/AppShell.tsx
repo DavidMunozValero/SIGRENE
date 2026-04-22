@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { CookieBanner } from "./CookieBanner";
 
 export type Role = "superadmin" | "admin_federacion" | "director_tecnico" | "coach" | "swimmer";
 
@@ -89,7 +90,7 @@ export function AppShell({ role }: { role: Role }) {
   }, []);
 
   const handleLogout = () => {
-    api.clearToken();
+    api.logout();
     router.navigate({ to: "/login" });
   };
 
@@ -203,6 +204,7 @@ export function AppShell({ role }: { role: Role }) {
           <Outlet />
         </main>
       </div>
+      <CookieBanner />
     </div>
   );
 }

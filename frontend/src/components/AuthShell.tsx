@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
+import { CookieBanner } from "./CookieBanner";
 
 export function AuthShell({
   title,
@@ -13,7 +14,7 @@ export function AuthShell({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden pb-24 lg:pb-28">
       {/* Aquatic backdrop */}
       <div className="absolute inset-0 bg-gradient-deep" />
       <div className="absolute inset-0 opacity-40 animate-ripple"
@@ -40,6 +41,7 @@ export function AuthShell({
           <Link to="/" className="hover:text-white transition-colors">← Volver a la web</Link>
         </div>
       </div>
+      <CookieBanner />
     </div>
   );
 }

@@ -39,8 +39,8 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-10 border-t border-border/60 pt-6 text-xs text-muted-foreground flex flex-col sm:flex-row gap-2 justify-between">
-          <p>© {new Date().getFullYear()} Sistema de Gestión del Rendimiento en Nadadores de Élite.</p>
-          <p>© {new Date().getFullYear()} David Muñoz Valero.</p>
+          <p>{new Date().getFullYear()} Sistema de Gestión del Rendimiento en Nadadores de Élite.</p>
+          <p>© David Muñoz Valero.</p>
         </div>
       </div>
     </footer>

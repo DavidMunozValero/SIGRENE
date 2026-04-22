@@ -110,9 +110,29 @@ function PrivacyPage() {
               <li>Respaldo periódico de datos.</li>
             </ul>
 
-            <h2 className="text-xl font-semibold mt-8">9. Cookies</h2>
+            <h2 className="text-xl font-semibold mt-8">9. Cookies y tecnologías similares</h2>
             <p>
-              La Plataforma puede utilizar cookies esenciales para el funcionamiento de la misma (autenticación, preferencias de sesión). No se utilizan cookies de seguimiento ni de terceros con fines publicitarios.
+              La Plataforma utiliza cookies y tecnologías similares para garantizar el correcto funcionamiento de los servicios y mejorar tu experiencia de uso. Al acceder a la Plataforma por primera vez, se muestra un banner de cookies que te permite aceptar, rechazar o configurar tus preferencias.
+            </p>
+            <p className="mt-4">
+              <strong>Tipos de cookies utilizadas:</strong>
+            </p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li><strong>Cookies necesarias:</strong> Son esenciales para el funcionamiento de la Plataforma. Permiten la autenticación, gestión de sesiones y seguridad. No pueden desactivarse.</li>
+              <li><strong>Cookies de análisis:</strong> Nos ayudan a entender cómo interactúas con la Plataforma, permitiéndonos mejorar continuamente. Solo se utilizan si das tu consentimiento.</li>
+              <li><strong>Cookies de marketing:</strong> Se utilizan para mostrar contenido personalizado y relevante. Solo se utilizan si das tu consentimiento.</li>
+            </ul>
+            <p className="mt-4">
+              <strong>Gestión de cookies:</strong>
+            </p>
+            <p>
+              Puedes cambiar tus preferencias de cookies en cualquier momento desde el enlace "Configurar cookies" disponible en el banner inicial o en el pie de página de la Plataforma. Ten en cuenta que bloquear cookies necesarias puede afectar al funcionamiento de la Plataforma.
+            </p>
+            <p className="mt-4">
+              <strong>Cookies de sesión (httpOnly):</strong>
+            </p>
+            <p>
+              Para mayor seguridad, la sesión de usuario se gestiona mediante cookies httpOnly, que no son accesibles desde JavaScript. Estas cookies se almacenan automáticamente cuando inicias sesión si aceptas "Mantener sesión iniciada".
             </p>
 
             <h2 className="text-xl font-semibold mt-8">10. Menores de edad</h2>
