@@ -61,7 +61,7 @@ function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="hero" size="xl">
-              <Link to="/register">Crear federación</Link>
+              <Link to="/register">Empezar ahora</Link>
             </Button>
             <Button asChild variant="glass" size="xl">
               <Link to="/login">Acceder</Link>
@@ -75,7 +75,7 @@ function Hero() {
 
 function Stats() {
   const items = [
-    { v: "4 roles", l: "Jerarquía federativa" },
+    { v: "3 roles", l: "Perfiles adaptados" },
     { v: "Rendimiento", l: "Seguimiento diario" },
     { v: "Métricas", l: "Análisis avanzado" },
     { v: "RGPD", l: "Datos protegidos" },

@@ -130,7 +130,7 @@ function RegisterPage() {
         )}
 
         <Button type="submit" variant="hero" size="lg" className="w-full">
-          Crear federación
+          Empezar ahora
         </Button>
         <p className="text-xs text-muted-foreground text-center">
           Al registrarte aceptas nuestros{" "}

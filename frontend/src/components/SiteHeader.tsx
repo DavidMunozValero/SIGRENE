@@ -27,7 +27,7 @@ export function SiteHeader() {
               <Link to="/login">Entrar</Link>
             </Button>
             <Button asChild variant="hero" size="sm">
-              <Link to="/register">Crear federación</Link>
+              <Link to="/register">Empezar ahora</Link>
             </Button>
           </div>
         </div>

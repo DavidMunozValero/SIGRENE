@@ -89,8 +89,8 @@ export function AppShell({ role }: { role: Role }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    api.logout();
+  const handleLogout = async () => {
+    await api.logout();
     router.navigate({ to: "/login" });
   };
 

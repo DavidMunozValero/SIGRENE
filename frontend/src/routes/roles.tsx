@@ -97,7 +97,7 @@ function RolesPage() {
           <p className="text-muted-foreground mb-6">¿Listo para empezar?</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Button asChild variant="hero" size="lg">
-              <Link to="/register">Crear federación</Link>
+              <Link to="/register">Empezar ahora</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link to="/login">Acceder</Link>

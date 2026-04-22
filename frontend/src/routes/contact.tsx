@@ -74,7 +74,7 @@ function ContactPage() {
                   <Link to="/roles">Roles</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/register">Crear federación</Link>
+                  <Link to="/register">Empezar ahora</Link>
                 </Button>
               </div>
             </div>
