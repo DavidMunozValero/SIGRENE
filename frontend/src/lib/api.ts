@@ -185,11 +185,11 @@ class ApiClient {
   }
 
   async getMiPerfil() {
-    return this.request<any>("/usuarios/me");
+    return this.request<any>("/me");
   }
 
   async updateMiPerfil(data: { nombre_completo?: string; password?: string; foto_perfil?: string | null }) {
-    return this.request<{ message: string }>("/usuarios/me", {
+    return this.request<{ message: string }>("/me", {
       method: "PUT",
       body: JSON.stringify(data),
     });
