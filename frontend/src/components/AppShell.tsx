@@ -3,60 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { CookieBanner } from "./CookieBanner";
+import { useLanguage } from "@/lib/i18n";
 
 export type Role = "superadmin" | "admin_federacion" | "director_tecnico" | "coach" | "swimmer";
 
-const ROLE_LABEL: Record<string, string> = {
-  superadmin: "Superadmin",
-  admin_federacion: "Admin Federación",
-  director_tecnico: "Director Técnico",
-  coach: "Entrenador",
-  swimmer: "Nadador",
-};
-
-const NAV: Record<string, { label: string; to: string }[]> = {
-  superadmin: [
-    { label: "Resumen", to: "/app/admin" },
-    { label: "Usuarios", to: "/app/admin/users" },
-    { label: "Solicitudes Pendientes", to: "/app/admin/pending" },
-    { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
-    { label: "Vista Previa", to: "/app/admin/preview" },
-  ],
-  admin_federacion: [
-    { label: "Resumen", to: "/app/admin" },
-    { label: "Usuarios", to: "/app/admin/users" },
-    { label: "Registrar Usuario", to: "/app/admin/register-trainer" },
-    { label: "Vista Previa", to: "/app/admin/preview" },
-  ],
-  director_tecnico: [
-    { label: "Dashboard", to: "/app/director" },
-    { label: "Grupos", to: "/app/director/groups" },
-    { label: "Informes", to: "/app/director/reports" },
-  ],
-  coach: [
-    { label: "Mi grupo", to: "/app/coach" },
-    { label: "Nadadores", to: "/app/coach/swimmers" },
-    { label: "Wellness", to: "/app/coach/wellness" },
-  ],
-  swimmer: [
-    { label: "Hoy", to: "/app/swimmer" },
-    { label: "Mi historial", to: "/app/swimmer/history" },
-    { label: "Perfil", to: "/app/swimmer/profile" },
-  ],
-};
-
-function getUserInitials(email?: string, name?: string): string {
-  if (name) {
-    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?";
-  }
-  if (email && email.length > 0) {
-    return email[0].toUpperCase();
-  }
-  return "?";
-}
-
 export function AppShell({ role }: { role: Role }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -118,6 +70,50 @@ export function AppShell({ role }: { role: Role }) {
     return "/app/admin/settings";
   };
 
+  const NAV_ADMIN = [
+    { label: t("app.summary"), to: "/app/admin" },
+    { label: t("app.users"), to: "/app/admin/users" },
+    { label: t("app.pending"), to: "/app/admin/pending" },
+    { label: t("app.register_user"), to: "/app/admin/register-trainer" },
+    { label: t("app.preview"), to: "/app/admin/preview" },
+  ];
+
+  const NAV_DIRECTOR = [
+    { label: t("app.dashboard"), to: "/app/director" },
+    { label: t("app.groups"), to: "/app/director/groups" },
+    { label: t("app.reports"), to: "/app/director/reports" },
+  ];
+
+  const NAV_COACH = [
+    { label: t("app.my_group"), to: "/app/coach" },
+    { label: t("app.swimmers"), to: "/app/coach/swimmers" },
+    { label: t("app.wellness"), to: "/app/coach/wellness" },
+  ];
+
+  const NAV_SWIMMER = [
+    { label: t("app.today"), to: "/app/swimmer" },
+    { label: t("app.history"), to: "/app/swimmer/history" },
+    { label: t("app.profile"), to: "/app/swimmer/profile" },
+  ];
+
+  const getNavForRole = (r: string) => {
+    if (r === "superadmin" || r === "admin_federacion") return NAV_ADMIN;
+    if (r === "director_tecnico") return NAV_DIRECTOR;
+    if (r === "coach") return NAV_COACH;
+    return NAV_SWIMMER;
+  };
+
+  const getRoleLabel = (r: string) => {
+    const labels: Record<string, string> = {
+      superadmin: t("app.superadmin"),
+      admin_federacion: t("app.admin_federacion"),
+      director_tecnico: t("app.director_tecnico"),
+      coach: t("app.coach"),
+      swimmer: t("app.swimmer"),
+    };
+    return labels[r] || r;
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-surface">
       {/* Sidebar */}
@@ -130,9 +126,9 @@ export function AppShell({ role }: { role: Role }) {
           <Logo variant="light" />
         </div>
         <div className="px-3 py-4">
-          <p className="px-3 text-xs uppercase tracking-wider text-white/50 mb-2">Menú</p>
+          <p className="px-3 text-xs uppercase tracking-wider text-white/50 mb-2">{t("app.menu")}</p>
           <nav className="space-y-1">
-            {(NAV[userRole] || NAV.coach).map((item) => {
+            {getNavForRole(userRole).map((item) => {
               const active = location.pathname === item.to;
               return (
                 <Link
@@ -164,33 +160,33 @@ export function AppShell({ role }: { role: Role }) {
             <button
               className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-border"
               onClick={() => setOpen(true)}
-              aria-label="Abrir menú"
+              aria-label={t("app.open_menu")}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
             </button>
             <div className="hidden lg:flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">Conectado como</span>
-              <span className="text-sm font-semibold text-foreground">{ROLE_LABEL[userRole] || "Usuario"}</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">{t("app.connected_as")}</span>
+              <span className="text-sm font-semibold text-foreground">{getRoleLabel(userRole)}</span>
             </div>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                aria-label="Menú de usuario"
+                aria-label={t("app.user_menu")}
               >
                 <div className="hidden sm:flex flex-col items-end leading-tight">
-                  <span className="text-sm font-medium text-foreground">{userName || userEmail || "Usuario"}</span>
-                  <span className="text-xs text-muted-foreground">{ROLE_LABEL[userRole] || "Usuario"}</span>
+                  <span className="text-sm font-medium text-foreground">{userName || userEmail}</span>
+                  <span className="text-xs text-muted-foreground">{getRoleLabel(userRole)}</span>
                 </div>
                 {userPhoto ? (
                   <img
                     src={userPhoto}
-                    alt="Foto de perfil"
+                    alt="Profile"
                     className="h-9 w-9 rounded-full object-cover shadow-aqua"
                   />
                 ) : (
                   <div className="h-9 w-9 rounded-full bg-gradient-water grid place-items-center text-white font-semibold text-sm shadow-aqua">
-                    {getUserInitials(userEmail, userName)}
+                    {(userName || userEmail || "?").charAt(0).toUpperCase()}
                   </div>
                 )}
               </button>
@@ -198,7 +194,7 @@ export function AppShell({ role }: { role: Role }) {
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border/60 bg-card shadow-elevated overflow-hidden">
                   <div className="px-4 py-3 border-b border-border/60">
-                    <p className="text-sm font-medium text-foreground">{userName || "Usuario"}</p>
+                    <p className="text-sm font-medium text-foreground">{userName}</p>
                     <p className="text-xs text-muted-foreground">{userEmail}</p>
                   </div>
                   <div className="py-1">
@@ -210,7 +206,7 @@ export function AppShell({ role }: { role: Role }) {
                       <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                       </svg>
-                      Ajustes
+                      {t("app.settings")}
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -219,7 +215,7 @@ export function AppShell({ role }: { role: Role }) {
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
                       </svg>
-                      Cerrar sesión
+                      {t("app.logout")}
                     </button>
                   </div>
                 </div>
@@ -232,7 +228,6 @@ export function AppShell({ role }: { role: Role }) {
           <Outlet />
         </main>
       </div>
-      <CookieBanner />
     </div>
   );
 }

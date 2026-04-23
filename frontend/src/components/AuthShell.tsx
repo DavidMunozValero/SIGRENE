@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
-import { CookieBanner } from "./CookieBanner";
+import { useLanguage } from "@/lib/i18n";
 
 export function AuthShell({
   title,
@@ -13,6 +13,7 @@ export function AuthShell({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="relative min-h-screen overflow-hidden pb-24 lg:pb-28">
       {/* Aquatic backdrop */}
@@ -38,10 +39,9 @@ export function AuthShell({
           </div>
         </div>
         <div className="px-6 pb-6 text-center text-xs text-white/60">
-          <Link to="/" className="hover:text-white transition-colors">← Volver a la web</Link>
+          <Link to="/" className="hover:text-white transition-colors">← {t("auth.back_to_web")}</Link>
         </div>
       </div>
-      <CookieBanner />
     </div>
   );
 }
