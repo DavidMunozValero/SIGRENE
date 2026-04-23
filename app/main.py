@@ -8,10 +8,11 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, Depends, status, Query, Body
+from fastapi import FastAPI, HTTPException, Depends, status, Query, Body, Request
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, EmailStr, Field
 
 from app.database.mongodb import DatabaseClient
@@ -97,12 +98,71 @@ async def lifespan(app: FastAPI):
     DatabaseClient.disconnect()
 
 
+class OriginVerificationMiddleware(BaseHTTPMiddleware):
+    """Middleware that blocks requests with disallowed Origin or Referer headers.
+
+    This is a second layer of protection beyond CORS. CORS only applies to
+    browser-based JavaScript requests. This middleware also blocks direct HTTP
+    clients (curl, Postman, scripts) that don't send an allowed origin.
+
+    The login endpoint (/login, /usuarios/registrar, /usuarios/recuperar) is
+    always allowed so users can authenticate from any origin.
+    """
+
+    def __init__(self, app, allowed_origins: list[str]):
+        super().__init__(app)
+        self.allowed_origins = [o.rstrip("/") for o in allowed_origins]
+        self.public_paths = {"/docs", "/openapi.json", "/redoc"}
+
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin", "").rstrip("/")
+        referer = request.headers.get("referer", "").rstrip("/")
+        path = request.url.path
+
+        # Public auth paths — always allow (login, register, recover password)
+        public_auth_paths = (
+            path.startswith("/api/v1/login") or
+            path.startswith("/api/v1/usuarios/registrar") or
+            path.startswith("/api/v1/usuarios/recuperar") or
+            path.startswith("/api/v1/usuarios/reset-password") or
+            path.startswith("/api/v1/logout") or
+            path == "/docs" or
+            path == "/openapi.json" or
+            path == "/redoc"
+        )
+        if public_auth_paths:
+            return await call_next(request)
+
+        # If no origin/referer at all (e.g. curl with no headers), block in production
+        env = os.environ.get("ENV", "development")
+        if env == "production" and not origin and not referer:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Forbidden: origin header required"}
+            )
+
+        # Check if origin or referer matches an allowed origin
+        effective_origin = origin or (referer.split("?")[0].rsplit("/", 1)[0] if referer else "")
+        if effective_origin and effective_origin not in self.allowed_origins:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Forbidden: origin not allowed"}
+            )
+
+        return await call_next(request)
+
+
 # Initialize the FastAPI application
+_env = os.environ.get("ENV", "development")
+_is_production = _env == "production"
+
 app = FastAPI(
     title="SIGRENE API",
     description="Plataforma de Rendimiento y Optimización del Nadador de Élite",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
 )
 
 
@@ -116,6 +176,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Second layer: verify origin header on every request (blocks curl/Postman in production)
+if _is_production:
+    app.add_middleware(OriginVerificationMiddleware, allowed_origins=_allowed_list)
 
 
 @app.get("/api/v1/registros-diarios/", response_model=RegistroDiarioListResponse)
