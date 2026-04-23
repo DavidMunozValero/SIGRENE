@@ -7,7 +7,7 @@ lifecycle, and defines the API routes (endpoints) for the frontend to consume.
 from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, Depends, status, Query
+from fastapi import FastAPI, HTTPException, Depends, status, Query, Body
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -107,9 +107,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite peticiones desde cualquier origen (ideal para pruebas locales)
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
-    allow_methods=["*"],  # Permite POST, GET, OPTIONS, etc.
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -823,7 +823,7 @@ async def delete_usuario(
     )
 
 
-@app.get("/api/v1/usuarios/me")
+@app.get("/api/v1/me")
 async def get_mi_perfil(current_user: dict = Depends(get_current_user)):
     """Get current user's profile."""
     db = DatabaseClient.get_db()
@@ -850,9 +850,9 @@ async def get_mi_perfil(current_user: dict = Depends(get_current_user)):
     }
 
 
-@app.put("/api/v1/usuarios/me")
+@app.put("/api/v1/me")
 async def update_mi_perfil(
-    update_data: dict,
+    update_data: dict = Body(...),
     current_user: dict = Depends(get_current_user)
 ):
     """Update current user's profile (name, password)."""
@@ -865,7 +865,7 @@ async def update_mi_perfil(
     if not update_dict:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"FOTO_DEBUG: No se proporcionaron campos válidos. Datos recibidos: {list(update_data.keys())}"
+            detail=f"No se proporcionaron campos válidos. Datos recibidos: {update_data}, keys: {list(update_data.keys()) if isinstance(update_data, dict) else type(update_data)}"
         )
     
     # Handle password change separately
