@@ -1,55 +1,55 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Funcionalidades — SIGRENE" },
-      { name: "description", content: "Gestión de nadadores, seguimiento diario, control de carga y análisis de competición para federaciones y clubes." },
-      { property: "og:title", content: "Funcionalidades — SIGRENE" },
-      { property: "og:description", content: "Herramientas para gestionar el rendimiento de nadadores." },
+      { title: "features.page.title" },
+      { name: "description", content: "features.page.desc" },
     ],
   }),
   component: FeaturesPage,
 });
 
-const blocks = [
-  {
-    title: "Organización por clubes",
-    body: "Cada federación o club gestiona sus datos de forma independiente, con acceso privado y seguro.",
-  },
-  {
-    title: "Permisos por rol",
-    body: "Directores, entrenadores y nadadores acceden solo a la información que les corresponde.",
-  },
-  {
-    title: "Seguimiento diario",
-    body: "Cada nadador puede realizar cuestionarios diarios o periódicos. Los entrenadores pueden consultar el estado de todo su grupo.",
-  },
-  {
-    title: "Control de carga",
-    body: "Métricas para prevenir lesiones y optimizar el rendimiento de cada nadador a lo largo del tiempo.",
-  },
-  {
-    title: "Análisis de competición",
-    body: "Registro de tiempos de carrera. Análisis de imágenes.",
-  },
-  {
-    title: "Informes",
-    body: "Reportes visuales adaptados para cada tipo de usuario que permiten seguir la evolución de cada nadador.",
-  },
-  {
-    title: "Gestión de nadadores",
-    body: "Registro completo de cada nadador con datos personales, rendimiento histórico y asignación a grupos de entrenamiento.",
-  },
-  {
-    title: "Privacidad de datos",
-    body: "Cumplimiento con la normativa de protección de datos. Cada usuario gestiona sus propios datos de forma segura.",
-  },
-];
-
 function FeaturesPage() {
+  const { t } = useLanguage();
+  const blocks = [
+    {
+      title: t("features.org"),
+      body: t("features.org.desc"),
+    },
+    {
+      title: t("features.perms"),
+      body: t("features.perms.desc"),
+    },
+    {
+      title: t("features.daily"),
+      body: t("features.daily.desc"),
+    },
+    {
+      title: t("features.load"),
+      body: t("features.load.desc"),
+    },
+    {
+      title: t("features.competition"),
+      body: t("features.competition.desc"),
+    },
+    {
+      title: t("features.reports"),
+      body: t("features.reports.desc"),
+    },
+    {
+      title: t("features.management"),
+      body: t("features.management.desc"),
+    },
+    {
+      title: t("features.privacy"),
+      body: t("features.privacy.desc"),
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
@@ -57,10 +57,10 @@ function FeaturesPage() {
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Funcionalidades</p>
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
-            Todo lo que tu federación necesita.
+            {t("features.title")}
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            Herramientas prácticas para gestionar el rendimiento de nadadores desde la base hasta la élite.
+            {t("features.subtitle")}
           </p>
         </div>
 

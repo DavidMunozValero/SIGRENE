@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageHeader, SectionCard, StatCard } from "@/components/dashboard/Cards";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/")({
   head: () => ({ meta: [{ title: "Resumen — Federación Admin" }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/app/admin/")({
 });
 
 function AdminHome() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalCoaches: 0,
@@ -47,33 +49,33 @@ function AdminHome() {
   return (
     <>
       <PageHeader
-        title="Panel de Administración"
-        description="Gestiona usuarios, nadadores y configuración del sistema."
+        title={t("admin.index.panel_title")}
+        description={t("admin.index.panel_desc")}
         action={
           <Button asChild variant="hero">
-            <Link to="/app/admin/register-trainer">+ Registrar Usuario</Link>
+            <Link to="/app/admin/register-trainer">+ {t("admin.index.register_user")}</Link>
           </Button>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard 
-          label="Usuarios totales" 
+          label={t("admin.index.total_users")} 
           value={isLoading ? "..." : String(stats.totalUsers)} 
           icon={<span>👥</span>} 
         />
         <StatCard 
-          label="Entrenadores" 
+          label={t("admin.index.coaches")} 
           value={isLoading ? "..." : String(stats.totalCoaches)} 
           icon={<span>🏊</span>} 
         />
         <StatCard 
-          label="Nadadores" 
+          label={t("admin.index.swimmers")} 
           value={isLoading ? "..." : String(stats.totalNadadores)} 
           icon={<span>🏅</span>} 
         />
         <StatCard 
-          label="Registros" 
+          label={t("admin.index.records")} 
           value={isLoading ? "..." : String(stats.totalRegistros)} 
           icon={<span>📋</span>} 
         />
@@ -82,8 +84,8 @@ function AdminHome() {
       <div className="grid gap-5 lg:grid-cols-3 mt-6">
         <div className="lg:col-span-2">
           <SectionCard
-            title="Acciones rápidas"
-            description="Tareas comunes de administración"
+            title={t("admin.index.quick_actions")}
+            description={t("admin.index.quick_actions_desc")}
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <Link to="/app/admin/users">
@@ -93,8 +95,8 @@ function AdminHome() {
                       👥
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Gestionar Usuarios</p>
-                      <p className="text-xs text-muted-foreground">Ver, editar y eliminar usuarios</p>
+                      <p className="font-medium text-foreground">{t("admin.index.manage_users")}</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.index.manage_users_desc")}</p>
                     </div>
                   </div>
                 </div>
@@ -107,8 +109,8 @@ function AdminHome() {
                       ➕
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Registrar Usuario</p>
-                      <p className="text-xs text-muted-foreground">Admin, director, entrenador o nadador</p>
+                      <p className="font-medium text-foreground">{t("admin.index.register_user_action")}</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.index.register_user_desc")}</p>
                     </div>
                   </div>
                 </div>
@@ -121,8 +123,8 @@ function AdminHome() {
                       ⚙️
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Mi Perfil</p>
-                      <p className="text-xs text-muted-foreground">Editar nombre y contraseña</p>
+                      <p className="font-medium text-foreground">{t("admin.index.my_profile")}</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.index.my_profile_desc")}</p>
                     </div>
                   </div>
                 </div>
@@ -135,8 +137,8 @@ function AdminHome() {
                       👁️
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Vista Previa</p>
-                      <p className="text-xs text-muted-foreground">Ver qué ve cada rol</p>
+                      <p className="font-medium text-foreground">{t("admin.index.preview")}</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.index.preview_desc")}</p>
                     </div>
                   </div>
                 </div>
@@ -145,12 +147,12 @@ function AdminHome() {
           </SectionCard>
         </div>
 
-        <SectionCard title="Inicio rápido" description="Primeros pasos">
+        <SectionCard title={t("admin.index.quick_start")} description={t("admin.index.quick_start_desc")}>
           <ul className="space-y-3 text-sm">
             {[
-              { l: "Registrar primer entrenador", done: stats.totalCoaches > 0 },
-              { l: "Registrar primer nadador", done: stats.totalNadadores > 0 },
-              { l: "Invitar a otros administradores", done: stats.totalUsers > 1 },
+              { l: t("admin.index.register_first_coach"), done: stats.totalCoaches > 0 },
+              { l: t("admin.index.register_first_swimmer"), done: stats.totalNadadores > 0 },
+              { l: t("admin.index.invite_admins"), done: stats.totalUsers > 1 },
             ].map((s, i) => (
               <li key={i} className="flex items-center gap-3">
                 <span className={`h-5 w-5 rounded-full grid place-items-center ${

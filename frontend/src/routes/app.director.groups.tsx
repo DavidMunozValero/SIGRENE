@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/director/groups")({
   head: () => ({ meta: [{ title: "Grupos — Director" }] }),
@@ -14,19 +15,20 @@ const groups = [
 ];
 
 function GroupsPage() {
+  const { t } = useLanguage();
   return (
     <>
-      <PageHeader title="Grupos de entrenamiento" description="Métricas agregadas por grupo. Sin acceso a wellness individual." />
-      <SectionCard title={`${groups.length} grupos activos`}>
+      <PageHeader title={t("director.groups.title_page")} description={t("director.groups.desc")} />
+      <SectionCard title={`${groups.length} ${t("director.groups.count")}`}>
         <div className="-m-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground tracking-wider">
               <tr>
-                <th className="text-left px-5 py-3">Grupo</th>
-                <th className="text-left px-5 py-3">Entrenador</th>
-                <th className="text-left px-5 py-3">Nadadores</th>
-                <th className="text-left px-5 py-3">ACWR</th>
-                <th className="text-left px-5 py-3">Asistencia</th>
+                <th className="text-left px-5 py-3">{t("director.groups.table.group")}</th>
+                <th className="text-left px-5 py-3">{t("director.groups.table.coach")}</th>
+                <th className="text-left px-5 py-3">{t("director.groups.table.swimmers")}</th>
+                <th className="text-left px-5 py-3">{t("director.groups.table.acwr")}</th>
+                <th className="text-left px-5 py-3">{t("director.groups.table.attendance")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">

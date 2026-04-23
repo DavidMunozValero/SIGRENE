@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/i18n";
 import heroPool from "@/assets/hero-pool.jpg";
 
 export const Route = createFileRoute("/")({
@@ -37,6 +38,7 @@ function HomePage() {
 }
 
 function Hero() {
+  const { t, lang } = useLanguage();
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -53,18 +55,27 @@ function Hero() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-28 md:pt-28 md:pb-40">
         <div className="max-w-3xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground">
-            La <span className="text-gradient-water">corriente</span> que mueve
-            <br className="hidden sm:block" /> a tu federación de natación.
+            {lang === "es" ? (
+              <>
+                La <span className="text-gradient-water">corriente</span> que mueve
+                <br className="hidden sm:block" /> a tu federación de natación.
+              </>
+            ) : (
+              <>
+                The <span className="text-gradient-water">current</span> that drives
+                <br className="hidden sm:block" /> your swimming federation.
+              </>
+            )}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-2xl">
-            Plataforma para la gestión integral del rendimiento de nadadores. Centraliza el seguimiento diario, análisis de competición y control de carga de entrenamiento. Diseñada para federaciones, clubes, entrenadores y nadadores.
+            {t("hero.subtitle")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild variant="hero" size="xl">
-              <Link to="/register">Empezar ahora</Link>
+              <Link to="/register">{t("hero.cta.start")}</Link>
             </Button>
             <Button asChild variant="glass" size="xl">
-              <Link to="/login">Acceder</Link>
+              <Link to="/login">{t("hero.cta.access")}</Link>
             </Button>
           </div>
         </div>
@@ -74,11 +85,12 @@ function Hero() {
 }
 
 function Stats() {
+  const { t } = useLanguage();
   const items = [
-    { v: "3 roles", l: "Perfiles adaptados" },
-    { v: "Rendimiento", l: "Seguimiento diario" },
-    { v: "Métricas", l: "Análisis avanzado" },
-    { v: "RGPD", l: "Datos protegidos" },
+    { v: t("stats.roles"), l: t("stats.roles.label") },
+    { v: t("stats.performance"), l: t("stats.performance.label") },
+    { v: t("stats.metrics"), l: t("stats.metrics.label") },
+    { v: t("stats.rgpd"), l: t("stats.rgpd.label") },
   ];
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-16 relative z-10">
@@ -95,21 +107,22 @@ function Stats() {
 }
 
 function Roles() {
+  const { t } = useLanguage();
   const roles = [
     {
-      title: "Director Técnico",
-      desc: "Dashboard agregado con KPIs federativos: métricas de rendimiento, participación y tendencia.",
-      tag: "Estrategia",
+      title: t("roles.director.title"),
+      desc: t("roles.director.desc"),
+      tag: t("roles.director.tag"),
     },
     {
-      title: "Entrenador",
-      desc: "Gestiona su grupo de nadadores, consulta rendimientos y comparte informes con familias.",
-      tag: "Operación",
+      title: t("roles.coach.title"),
+      desc: t("roles.coach.desc"),
+      tag: t("roles.coach.tag"),
     },
     {
-      title: "Nadador",
-      desc: "Se registra por invitación y completa su seguimiento de forma diaria.",
-      tag: "Seguimiento",
+      title: t("roles.swimmer.title"),
+      desc: t("roles.swimmer.desc"),
+      tag: t("roles.swimmer.tag"),
     },
   ];
   return (
@@ -117,10 +130,10 @@ function Roles() {
       <div className="max-w-2xl">
         <p className="text-sm font-semibold uppercase tracking-wider text-primary">Roles</p>
         <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
-          Tres perfiles, una misma plataforma.
+          {t("roles.title")}
         </h2>
         <p className="mt-3 text-muted-foreground">
-          Acceso por capas con aislamiento de datos entre organizaciones y entre grupos del mismo entrenador.
+          {t("roles.subtitle")}
         </p>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -133,13 +146,13 @@ function Roles() {
               {r.tag}
             </div>
             <div className="h-12 w-12 rounded-xl bg-gradient-water grid place-items-center text-white shadow-aqua mb-4">
-              {r.title === "Director Técnico" && (
+              {r.title === t("roles.director.title") && (
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
               )}
-              {r.title === "Entrenador" && (
+              {r.title === t("roles.coach.title") && (
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               )}
-              {r.title === "Nadador" && (
+              {r.title === t("roles.swimmer.title") && (
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12c1.5-1.5 3-2 5-2s3.5.5 5 2 3 2 5 2 3.5-.5 5-2"/><path d="M2 17c1.5-1.5 3-2 5-2s3.5.5 5 2 3 2 5 2 3.5-.5 5-2"/><circle cx="8" cy="5" r="2"/><path d="m9 8-1.5 1.5"/></svg>
               )}
             </div>
@@ -153,13 +166,14 @@ function Roles() {
 }
 
 function Features() {
+  const { t } = useLanguage();
   const items = [
-    { t: "Organización por clubes", d: "Cada federación o club gestiona sus datos de forma independiente." },
-    { t: "Permisos por rol", d: "Cada usuario accede solo a la información que le corresponde." },
-    { t: "Seguimiento diario", d: "Cada nadador registra cada mañana cómo se encuentra antes del entreno." },
-    { t: "Control de carga", d: "Métricas para prevenir lesiones y optimizar el rendimiento de cada nadador." },
-    { t: "Análisis de competición", d: "Registro de tiempos, parciales y velocidad en cada tramo de la carrera." },
-    { t: "Informes", d: "Reportes visuales adaptados para cada tipo de usuario." },
+    { it: t("features.org"), d: t("features.org.desc") },
+    { it: t("features.perms"), d: t("features.perms.desc") },
+    { it: t("features.daily"), d: t("features.daily.desc") },
+    { it: t("features.load"), d: t("features.load.desc") },
+    { it: t("features.competition"), d: t("features.competition.desc") },
+    { it: t("features.reports"), d: t("features.reports.desc") },
   ];
   return (
     <section id="funcionalidades" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-28">
@@ -167,18 +181,18 @@ function Features() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Funcionalidades</p>
           <h2 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight">
-            Todo lo que tu federación necesita.
+            {t("features.title")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Herramientas prácticas para gestionar el rendimiento de nadadores desde la base hasta élite.
+            {t("features.subtitle")}
           </p>
         </div>
         <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
           {items.map((it) => (
-            <div key={it.t} className="rounded-2xl bg-card/80 backdrop-blur border border-border/60 p-5">
+            <div key={it.it} className="rounded-2xl bg-card/80 backdrop-blur border border-border/60 p-5">
               <div className="flex items-center gap-2 text-primary">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6 9 17l-5-5"/></svg>
-                <h3 className="font-semibold text-foreground">{it.t}</h3>
+                <h3 className="font-semibold text-foreground">{it.it}</h3>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{it.d}</p>
             </div>
@@ -190,6 +204,7 @@ function Features() {
 }
 
 function CTA() {
+  const { t } = useLanguage();
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-28">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-deep p-10 md:p-14 shadow-elevated">
@@ -197,18 +212,18 @@ function CTA() {
         <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="max-w-xl text-white">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              ¿Listos para zambullirse?
+              {t("cta.title")}
             </h2>
             <p className="mt-3 text-white/80">
-              Crea tu federación e invita a tu primer entrenador para empezar a gestionar el rendimiento de tus nadadores.
+              {t("cta.subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="glass" size="xl">
-              <Link to="/register">Empezar ahora</Link>
+              <Link to="/register">{t("cta.start")}</Link>
             </Button>
             <Button asChild variant="hero" size="xl">
-              <Link to="/login">Acceder</Link>
+              <Link to="/login">{t("cta.access")}</Link>
             </Button>
           </div>
         </div>

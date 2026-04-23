@@ -1,22 +1,31 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    if (api.isAuthenticated()) {
+      const role = api.getUserRole() || "coach";
+      const redirectTo = api.getDefaultRouteForRole(role);
+      throw redirect({ to: redirectTo });
+    }
+  },
   head: () => ({
     meta: [
-      { title: "Entrar — SIGRENE" },
-      { name: "description", content: "Inicia sesión en SIGRENE para acceder a tu federación." },
+      { title: "login.page.title" },
+      { name: "description", content: "login.page.desc" },
     ],
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,7 +63,7 @@ function LoginPage() {
       const redirectTo = api.getDefaultRouteForRole(role);
       navigate({ to: redirectTo });
     } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
+      setError(err.message || t("login.error"));
     } finally {
       setIsLoading(false);
     }
@@ -66,12 +75,12 @@ function LoginPage() {
 
   return (
     <AuthShell
-      title="Bienvenido de vuelta"
-      subtitle="Accede a la plataforma de tu federación."
+      title={t("login.welcome")}
+      subtitle={t("login.subtitle")}
       footer={
         <>
-          ¿No tienes cuenta?{" "}
-          <Link to="/register" className="text-aqua font-medium hover:underline">Crea una federación</Link>
+          {t("login.no_account")}{" "}
+          <Link to="/register" className="text-aqua font-medium hover:underline">{t("login.create_federation")}</Link>
         </>
       }
     >
@@ -82,7 +91,7 @@ function LoginPage() {
           </div>
         )}
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("contact.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -93,26 +102,26 @@ function LoginPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Contraseña</Label>
+          <Label htmlFor="password">{t("login.password")}</Label>
           <Input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Tu contraseña"
+            placeholder={t("login.password_placeholder")}
             required
           />
         </div>
         <div className="text-right">
-          <Link to="/forgot-password" className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
+          <Link to="/forgot-password" className="text-xs text-primary hover:underline">{t("login.forgot")}</Link>
         </div>
 
         <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
-          {isLoading ? "Entrando..." : "Entrar"}
+          {isLoading ? t("login.signing_in") : t("login.sign_in")}
         </Button>
 
         <div className="text-center text-xs text-muted-foreground mt-4">
-          <p>Usa tus credenciales registradas o regístrate para crear una cuenta.</p>
+          <p>{t("login.hint")}</p>
         </div>
       </form>
     </AuthShell>

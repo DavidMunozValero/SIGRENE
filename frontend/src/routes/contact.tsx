@@ -5,20 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contacto — SIGRENE" },
-      { name: "description", content: "Contacta con el desarrollador de SIGRENE para resolver tus dudas sobre la plataforma." },
-      { property: "og:title", content: "Contacto — SIGRENE" },
-      { property: "og:description", content: "Plataforma de gestión del rendimiento en nadadores de élite." },
+      { title: "contact.page.title" },
+      { name: "description", content: "contact.page.desc" },
     ],
   }),
   component: ContactPage,
 });
 
 function ContactPage() {
+  const { t } = useLanguage();
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -43,10 +43,10 @@ function ContactPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">Contacto</p>
             <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
-              ¿Tienes preguntas sobre SIGRENE?
+              {t("contact.title")}
             </h1>
             <p className="mt-4 text-muted-foreground text-lg">
-              Si quieres conocer más sobre la plataforma, contacta directamente con el desarrollador.
+              {t("contact.subtitle")}
             </p>
             <div className="mt-8 space-y-4 text-sm">
               <div className="flex items-center gap-3">
@@ -61,20 +61,20 @@ function ContactPage() {
                 <div className="h-9 w-9 rounded-lg bg-gradient-water grid place-items-center text-white shadow-aqua">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </div>
-                <span>Toledo, España</span>
+                <span>{t("contact.location")}</span>
               </div>
             </div>
             <div className="mt-8">
-              <p className="text-sm font-semibold text-foreground mb-3">Enlaces</p>
+              <p className="text-sm font-semibold text-foreground mb-3">{t("contact.links")}</p>
               <div className="flex flex-wrap gap-3">
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/features">Funcionalidades</Link>
+                  <Link to="/features">{t("nav.funcionalidades")}</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/roles">Roles</Link>
+                  <Link to="/roles">{t("nav.roles")}</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/register">Empezar ahora</Link>
+                  <Link to="/register">{t("nav.empezar")}</Link>
                 </Button>
               </div>
             </div>
@@ -85,24 +85,24 @@ function ContactPage() {
           >
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name">Nombre</Label>
-                <Input id="name" name="name" placeholder="Tu nombre" required />
+                <Label htmlFor="name">{t("contact.name")}</Label>
+                <Input id="name" name="name" placeholder={t("contact.name_placeholder")} required />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="org">Organización</Label>
-                <Input id="org" name="org" placeholder="Tu club o federación" />
+                <Label htmlFor="org">{t("contact.organization")}</Label>
+                <Input id="org" name="org" placeholder={t("contact.organization_placeholder")} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="tu@email.es" required />
+              <Label htmlFor="email">{t("contact.email")}</Label>
+              <Input id="email" name="email" type="email" placeholder={t("contact.email_placeholder")} required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="msg">Mensaje</Label>
-              <Textarea id="msg" name="msg" rows={5} placeholder="¿En qué puedo ayudarte?" required />
+              <Label htmlFor="msg">{t("contact.message")}</Label>
+              <Textarea id="msg" name="msg" rows={5} placeholder={t("contact.message_placeholder")} required />
             </div>
             <Button type="submit" variant="hero" size="lg" className="w-full">
-              Enviar mensaje
+              {t("contact.send")}
             </Button>
           </form>
         </div>

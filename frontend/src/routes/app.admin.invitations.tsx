@@ -1,41 +1,45 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/invitations")({
   head: () => ({ meta: [{ title: "Registro Directo — Admin" }] }),
-  component: InvitationsPage,
+  component: InvitationsPageWithI18n,
 });
 
-function InvitationsPage() {
+function InvitationsPageWithI18n() {
+  const { t } = useLanguage();
+  return <InvitationsPage t={t} />;
+}
+
+function InvitationsPage({ t }: { t: (key: string) => string }) {
   return (
     <>
       <PageHeader
-        title="Registro Directo"
-        description="Registra usuarios directamente sin necesidad de invitación."
+        title={t("admin.invitations.title_page")}
+        description={t("admin.invitations.desc")}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <SectionCard
-          title="Registrar Usuario"
-          description="Crea cuentas de cualquier tipo: Admin, Director, Entrenador o Nadador."
+          title={t("admin.invitations.register")}
+          description={t("admin.invitations.register_desc")}
         >
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              El usuario recibirá sus credenciales y podrá iniciar sesión inmediatamente 
-              después del registro.
+              {t("admin.invitations.register_desc2")}
             </p>
             <Button asChild variant="hero">
-              <Link to="/app/admin/register-trainer">+ Registrar Usuario</Link>
+              <Link to="/app/admin/register-trainer">+ {t("admin.invitations.register")}</Link>
             </Button>
           </div>
         </SectionCard>
 
-        <SectionCard title="Gestionar Usuarios" description="Ver, editar y gestionar todos los usuarios">
+        <SectionCard title={t("admin.invitations.manage")} description={t("admin.invitations.manage_desc")}>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Accede a la lista completa de usuarios para ver, editar 
-              o eliminar sus cuentas.
+              {t("admin.invitations.manage_desc2")}
             </p>
             <Button asChild variant="outline">
               <Link to="/app/admin/users">→ Ir a Usuarios</Link>

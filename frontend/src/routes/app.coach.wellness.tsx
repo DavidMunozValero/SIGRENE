@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/coach/wellness")({
   head: () => ({ meta: [{ title: "Wellness — Entrenador" }] }),
@@ -28,19 +29,20 @@ function cell(v: number, max = 10) {
 }
 
 function WellnessPage() {
+  const { t } = useLanguage();
   return (
     <>
-      <PageHeader title="Wellness diario" description="Lecturas matinales de hoy de tu grupo." />
-      <SectionCard title="Hoy · 14 de 18 completados">
+      <PageHeader title={t("coach.wellness.title_page")} description={t("coach.wellness.desc")} />
+      <SectionCard title={t("coach.wellness.table_title")}>
         <div className="-m-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground tracking-wider">
               <tr>
-                <th className="text-left px-5 py-3">Nadador</th>
-                <th className="text-left px-5 py-3">Sueño (h)</th>
-                <th className="text-left px-5 py-3">Ánimo</th>
-                <th className="text-left px-5 py-3">Dolor muscular</th>
-                <th className="text-left px-5 py-3">Fatiga</th>
+                <th className="text-left px-5 py-3">{t("coach.wellness.table.swimmer")}</th>
+                <th className="text-left px-5 py-3">{t("coach.wellness.table.sleep")}</th>
+                <th className="text-left px-5 py-3">{t("coach.wellness.table.mood")}</th>
+                <th className="text-left px-5 py-3">{t("coach.wellness.table.muscle")}</th>
+                <th className="text-left px-5 py-3">{t("coach.wellness.table.fatigue")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">

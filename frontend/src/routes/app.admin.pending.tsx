@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/pending")({
   head: () => ({ meta: [{ title: "Solicitudes Pendientes — Admin" }] }),
-  component: PendingPage,
+  component: PendingPageWithI18n,
 });
+
+function PendingPageWithI18n() {
+  const { t } = useLanguage();
+  return <PendingPage t={t} />;
+}
 
 interface Usuario {
   email: string;
@@ -54,7 +60,7 @@ function formatDate(dateStr?: string): string {
   }
 }
 
-function PendingPage() {
+function PendingPage({ t }: { t: (key: string) => string }) {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +76,7 @@ function PendingPage() {
       const response = await api.getRegistrosPendientes();
       setUsuarios(response.datos || []);
     } catch (err: any) {
-      setError(err.message || "Error cargando solicitudes pendientes");
+      setError(err.message || t("admin.pending.error_loading"));
     } finally {
       setIsLoading(false);
     }
@@ -82,20 +88,20 @@ function PendingPage() {
       await api.aprobarUsuario(email);
       loadPendientes();
     } catch (err: any) {
-      alert(err.message || "Error aprobando usuario");
+      alert(err.message || t("admin.pending.error_approving"));
     } finally {
       setProcessing(null);
     }
   };
 
   const handleRechazar = async (email: string) => {
-    if (!confirm(`¿Estás seguro de rechazar la solicitud de ${email}?`)) return;
+    if (!confirm(`${t("admin.pending.reject_confirm")} ${email}?`)) return;
     try {
       setProcessing(email);
       await api.rechazarUsuario(email);
       loadPendientes();
     } catch (err: any) {
-      alert(err.message || "Error rechazando usuario");
+      alert(err.message || t("admin.pending.error_rejecting"));
     } finally {
       setProcessing(null);
     }
@@ -104,7 +110,7 @@ function PendingPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Solicitudes Pendientes" description="Cargando..." />
+        <PageHeader title={t("admin.pending.title_page")} description={t("admin.pending.loading")} />
         <div className="h-64 rounded-xl bg-muted animate-pulse" />
       </div>
     );
@@ -121,30 +127,29 @@ function PendingPage() {
   return (
     <>
       <PageHeader
-        title="Solicitudes Pendientes"
-        description={`${usuarios.length} solicitudes de registro pendientes de aprobación.`}
+        title={t("admin.pending.title_page")}
+        description={`${usuarios.length} ${t("admin.pending.count")}`}
       />
 
       {usuarios.length === 0 ? (
-        <SectionCard title="Sin solicitudes pendientes">
+        <SectionCard title={t("admin.pending.no_pending")}>
           <div className="text-center py-8 text-muted-foreground">
             <svg className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p>No hay solicitudes pendientes de aprobación.</p>
-            <p className="text-sm mt-1">Las nuevas solicitudes de administradores de federación aparecerán aquí.</p>
+            <p>{t("admin.pending.no_pending_desc")}</p>
           </div>
         </SectionCard>
       ) : (
-        <SectionCard title={`${usuarios.length} solicitudes pendientes`}>
+        <SectionCard title={`${usuarios.length} ${t("admin.pending.count")}`}>
           <div className="-m-5 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="text-left px-5 py-3">Solicitante</th>
-                  <th className="text-left px-5 py-3">Rol solicitado</th>
-                  <th className="text-left px-5 py-3">Fecha solicitud</th>
-                  <th className="text-right px-5 py-3">Acciones</th>
+                  <th className="text-left px-5 py-3">{t("admin.pending.table.applicant")}</th>
+                  <th className="text-left px-5 py-3">{t("admin.pending.table.role")}</th>
+                  <th className="text-left px-5 py-3">{t("admin.pending.table.date")}</th>
+                  <th className="text-right px-5 py-3">{t("admin.pending.table.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -156,7 +161,7 @@ function PendingPage() {
                           {(u.nombre_completo?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) || u.email?.[0] || "?").toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{u.nombre_completo || "Sin nombre"}</p>
+                          <p className="font-medium text-foreground">{u.nombre_completo || t("admin.pending.no_name")}</p>
                           <p className="text-xs text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
@@ -177,7 +182,7 @@ function PendingPage() {
                           disabled={processing === u.email}
                           onClick={() => handleAprobar(u.email)}
                         >
-                          {processing === u.email ? "Procesando..." : "Aprobar"}
+                          {processing === u.email ? t("admin.pending.processing") : t("admin.pending.approve")}
                         </Button>
                         <Button
                           variant="outline"
@@ -186,7 +191,7 @@ function PendingPage() {
                           disabled={processing === u.email}
                           onClick={() => handleRechazar(u.email)}
                         >
-                          Rechazar
+                          {t("admin.pending.reject")}
                         </Button>
                       </div>
                     </td>

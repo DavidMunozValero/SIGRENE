@@ -5,20 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/settings")({
   head: () => ({ meta: [{ title: "Mi Perfil — Admin" }] }),
   component: SettingsPage,
 });
 
-interface Profile {
-  email: string;
-  nombre_completo: string;
-  rol: string;
-  foto_perfil?: string | null;
-}
-
 function SettingsPage() {
+  const { t } = useLanguage();
+
+  interface Profile {
+    email: string;
+    nombre_completo: string;
+    rol: string;
+    foto_perfil?: string | null;
+  }
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ function SettingsPage() {
           setPhotoPreview(data.foto_perfil);
         }
       } catch (err: any) {
-        setError(err.message || "Error cargando perfil");
+        setError(err.message || t("admin.settings.error_loading"));
       } finally {
         setIsLoading(false);
       }
@@ -58,12 +61,12 @@ function SettingsPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Por favor selecciona una imagen");
+      setError(t("admin.settings.select_image"));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setError("La imagen debe ser menor de 2MB");
+      setError(t("admin.settings.image_size"));
       return;
     }
 
@@ -84,9 +87,8 @@ function SettingsPage() {
       await api.updateMiPerfil({ foto_perfil: photoPreview });
       setSuccessPhoto(true);
       setTimeout(() => setSuccessPhoto(false), 3000);
-      window.location.reload();
     } catch (err: any) {
-      setError(err.message || "Error actualizando foto");
+      setError(err.message || t("admin.settings.error_photo"));
     }
   };
 
@@ -97,9 +99,8 @@ function SettingsPage() {
       setPhotoPreview(null);
       setSuccessPhoto(true);
       setTimeout(() => setSuccessPhoto(false), 3000);
-      window.location.reload();
     } catch (err: any) {
-      setError(err.message || "Error eliminando foto");
+      setError(err.message || t("admin.settings.error_removing"));
     }
   };
 
@@ -113,7 +114,7 @@ function SettingsPage() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message || "Error actualizando nombre");
+      setError(err.message || t("admin.settings.error_name"));
     }
   };
 
@@ -122,12 +123,12 @@ function SettingsPage() {
     setError(null);
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError(t("admin.settings.passwords_mismatch"));
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres");
+      setError(t("admin.settings.password_min"));
       return;
     }
 
@@ -142,14 +143,14 @@ function SettingsPage() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message || "Error actualizando contraseña");
+      setError(err.message || t("admin.settings.error_password"));
     }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Mi Perfil" description="Cargando..." />
+        <PageHeader title={t("admin.settings.my_profile")} description={t("admin.settings.loading")} />
         <div className="h-64 rounded-xl bg-muted animate-pulse" />
       </div>
     );
@@ -158,8 +159,8 @@ function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Mi Perfil"
-        description="Gestiona tu información personal y contraseña."
+        title={t("admin.settings.my_profile")}
+        description={t("admin.settings.my_profile_desc")}
       />
 
       {error && (
@@ -170,18 +171,18 @@ function SettingsPage() {
 
       {success && (
         <div className="mb-4 rounded-lg bg-green-500/10 text-green-400 p-3 text-sm">
-          Cambios guardados correctamente
+          {t("admin.settings.saved")}
         </div>
       )}
 
       {successPhoto && (
         <div className="mb-4 rounded-lg bg-green-500/10 text-green-400 p-3 text-sm">
-          Foto actualizada correctamente
+          {t("admin.settings.photo_saved")}
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Foto de perfil">
+        <SectionCard title={t("admin.settings.profile_photo")}>
           <form onSubmit={handlePhotoSubmit} className="space-y-4">
             <div className="flex items-center gap-4">
               {photoPreview ? (
@@ -197,7 +198,7 @@ function SettingsPage() {
               )}
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Formatos: JPG, PNG, GIF. Máximo 2MB.
+                  {t("admin.settings.formats")}
                 </p>
                 <input
                   type="file"
@@ -213,7 +214,7 @@ function SettingsPage() {
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    {photoPreview ? "Cambiar" : "Subir foto"}
+                    {photoPreview ? t("admin.settings.change") : t("admin.settings.upload")}
                   </Button>
                   {photoPreview && (
                     <Button
@@ -223,7 +224,7 @@ function SettingsPage() {
                       onClick={handleRemovePhoto}
                       className="text-destructive hover:text-destructive"
                     >
-                      Eliminar
+                      {t("admin.settings.remove")}
                     </Button>
                   )}
                 </div>
@@ -231,13 +232,13 @@ function SettingsPage() {
             </div>
             {photoPreview && photoPreview !== profile?.foto_perfil && (
               <Button type="submit" variant="hero" size="sm">
-                Guardar foto
+                {t("admin.settings.save_photo")}
               </Button>
             )}
           </form>
         </SectionCard>
 
-        <SectionCard title="Información personal">
+        <SectionCard title={t("admin.settings.personal_info")}>
           <form onSubmit={handleNameSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
@@ -255,62 +256,62 @@ function SettingsPage() {
                 id="nombre_completo"
                 value={formData.nombre_completo}
                 onChange={(e) => setFormData(prev => ({ ...prev, nombre_completo: e.target.value }))}
-                placeholder="Tu nombre"
+                placeholder={t("admin.settings.name_placeholder")}
               />
             </div>
 
             <div className="space-y-1.5">
               <Label>Rol</Label>
               <Input
-                value={profile?.rol === "superadmin" ? "Superadmin" : profile?.rol === "admin_federacion" ? "Admin Federación" : profile?.rol === "director_tecnico" ? "Director Técnico" : profile?.rol === "coach" ? "Entrenador" : profile?.rol === "swimmer" ? "Nadador" : profile?.rol}
+                value={profile?.rol === "superadmin" ? t("app.superadmin") : profile?.rol === "admin_federacion" ? t("app.admin_federacion") : profile?.rol === "director_tecnico" ? t("app.director_tecnico") : profile?.rol === "coach" ? t("app.coach") : profile?.rol === "swimmer" ? t("app.swimmer") : profile?.rol}
                 disabled
                 className="bg-muted"
               />
             </div>
 
             <Button type="submit" variant="hero">
-              Guardar nombre
+              {t("admin.settings.save_name")}
             </Button>
           </form>
         </SectionCard>
 
-        <SectionCard title="Cambiar contraseña">
+        <SectionCard title={t("admin.settings.change_password")}>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="currentPassword">Contraseña actual</Label>
+              <Label htmlFor="currentPassword">{t("admin.settings.current_password")}</Label>
               <Input
                 id="currentPassword"
                 type="password"
                 value={formData.currentPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                placeholder="Contraseña actual"
+                placeholder={t("admin.settings.current_password_placeholder")}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="newPassword">Nueva contraseña</Label>
+              <Label htmlFor="newPassword">{t("admin.settings.new_password")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={formData.newPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t("admin.settings.new_password_placeholder")}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Confirmar nueva contraseña</Label>
+              <Label htmlFor="confirmPassword">{t("admin.settings.confirm_password")}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                placeholder="Repite la nueva contraseña"
+                placeholder={t("admin.settings.confirm_placeholder")}
               />
             </div>
 
             <Button type="submit" variant="hero">
-              Cambiar contraseña
+              {t("admin.settings.change_btn")}
             </Button>
           </form>
         </SectionCard>

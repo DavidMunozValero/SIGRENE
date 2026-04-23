@@ -2,53 +2,53 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/roles")({
   head: () => ({
     meta: [
-      { title: "Roles — SIGRENE" },
-      { name: "description", content: "Director Técnico, Entrenador y Nadador: tres perfiles con acceso adaptado a cada rol." },
-      { property: "og:title", content: "Roles — SIGRENE" },
-      { property: "og:description", content: "Tres perfiles adaptados para gestionar el rendimiento de nadadores." },
+      { title: "roles.page.title" },
+      { name: "description", content: "roles.page.desc" },
     ],
   }),
   component: RolesPage,
 });
 
-const roles = [
-  {
-    name: "Director Técnico",
-    icon: "chart",
-    tag: "Estrategia",
-    bullets: [
-      "Dashboard agregado con métricas de rendimiento federativo",
-      "Análisis de participación y tendencia de los clubes",
-      "Vista general para gestión deportiva",
-    ],
-  },
-  {
-    name: "Entrenador",
-    icon: "clock",
-    tag: "Operación",
-    bullets: [
-      "Gestiona su grupo de nadadores",
-      "Consulta rendimientos y seguimiento diario",
-      "Comparte informes con familias",
-    ],
-  },
-  {
-    name: "Nadador",
-    icon: "swimmer",
-    tag: "Seguimiento",
-    bullets: [
-      "Registro personal con credenciales de invitación",
-      "Completar su seguimiento diario de forma",
-      "Consulta su histórico personal y progreso",
-    ],
-  },
-];
-
 function RolesPage() {
+  const { t } = useLanguage();
+  const roles = [
+    {
+      name: t("roles.director.title"),
+      icon: "chart",
+      tag: t("roles.director.tag"),
+      bullets: [
+        "Dashboard agregado con métricas de rendimiento federativo",
+        "Análisis de participación y tendencia de los clubes",
+        "Vista general para gestión deportiva",
+      ],
+    },
+    {
+      name: t("roles.coach.title"),
+      icon: "clock",
+      tag: t("roles.coach.tag"),
+      bullets: [
+        "Gestiona su grupo de nadadores",
+        "Consulta rendimientos y seguimiento diario",
+        "Comparte informes con familias",
+      ],
+    },
+    {
+      name: t("roles.swimmer.title"),
+      icon: "swimmer",
+      tag: t("roles.swimmer.tag"),
+      bullets: [
+        "Registro personal con credenciales de invitación",
+        "Completar su seguimiento diario de forma",
+        "Consulta su histórico personal y progreso",
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
@@ -56,10 +56,10 @@ function RolesPage() {
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Roles</p>
           <h1 className="mt-2 text-4xl md:text-5xl font-bold tracking-tight">
-            Tres perfiles, una misma plataforma.
+            {t("roles.title")}
           </h1>
           <p className="mt-4 text-muted-foreground text-lg">
-            Acceso por capas con aislamiento de datos entre organizaciones y entre grupos del mismo entrenador.
+            {t("roles.subtitle")}
           </p>
         </div>
 
@@ -94,13 +94,13 @@ function RolesPage() {
         </div>
 
         <div className="mt-16 text-center">
-          <p className="text-muted-foreground mb-6">¿Listo para empezar?</p>
+          <p className="text-muted-foreground mb-6">{t("roles.ready")}</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Button asChild variant="hero" size="lg">
-              <Link to="/register">Empezar ahora</Link>
+              <Link to="/register">{t("roles.get_started")}</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link to="/login">Acceder</Link>
+              <Link to="/login">{t("roles.access")}</Link>
             </Button>
           </div>
         </div>

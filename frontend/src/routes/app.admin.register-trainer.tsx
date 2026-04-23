@@ -5,21 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/register-trainer")({
   head: () => ({ meta: [{ title: "Registrar Usuario — Admin" }] }),
-  component: RegisterTrainerPage,
+  component: RegisterTrainerPageWithI18n,
 });
 
-const ROLES = [
-  { value: "superadmin", label: "Superadmin", description: "Acceso total al sistema" },
-  { value: "admin_federacion", label: "Admin Federación", description: "Gestión federativa" },
-  { value: "director_tecnico", label: "Director Técnico", description: "Dashboard agregado e informes" },
-  { value: "coach", label: "Entrenador", description: "Gestión de nadadores" },
-  { value: "swimmer", label: "Nadador", description: "Panel personal" },
-];
+function RegisterTrainerPageWithI18n() {
+  const { t } = useLanguage();
+  return <RegisterTrainerPage t={t} />;
+}
 
-function RegisterTrainerPage() {
+interface ROLES {
+  value: string;
+  label: string;
+  description: string;
+}
+
+function RegisterTrainerPage({ t }: { t: (key: string) => string }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +37,14 @@ function RegisterTrainerPage() {
     rol: "coach",
   });
 
+  const ROLES: ROLES[] = [
+    { value: "superadmin", label: "Superadmin", description: t("admin.register.full_access") },
+    { value: "admin_federacion", label: "Admin Federación", description: t("admin.register.federation_admin") },
+    { value: "director_tecnico", label: "Director Técnico", description: t("admin.register.dashboard") },
+    { value: "coach", label: "Entrenador", description: t("admin.register.coach_management") },
+    { value: "swimmer", label: t("admin.preview.swimmer_label"), description: t("admin.register.swimmer_panel") },
+  ];
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -43,12 +55,12 @@ function RegisterTrainerPage() {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError(t("admin.register.passwords_mismatch"));
       return;
     }
 
     if (formData.password.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres");
+      setError(t("admin.register.password_min"));
       return;
     }
 
@@ -66,7 +78,7 @@ function RegisterTrainerPage() {
         router.navigate({ to: "/app/admin/users" });
       }, 1500);
     } catch (err: any) {
-      setError(err.message || "Error registrando usuario");
+      setError(err.message || t("admin.register.error"));
     } finally {
       setIsLoading(false);
     }
@@ -81,11 +93,11 @@ function RegisterTrainerPage() {
               <path d="M20 6 9 17l-5-5"/>
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Usuario registrado</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t("admin.register.success")}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            El usuario se ha registrado correctamente y puede iniciar sesión.
+            {t("admin.register.success_desc")}
           </p>
-          <p className="text-xs text-muted-foreground">Redirigiendo...</p>
+          <p className="text-xs text-muted-foreground">{t("admin.register.redirecting")}</p>
         </div>
       </div>
     );
@@ -94,17 +106,17 @@ function RegisterTrainerPage() {
   return (
     <>
       <PageHeader
-        title="Registrar Usuario"
-        description="Crea una cuenta de usuario directamente sin necesidad de invitación."
+        title={t("admin.register.title_page")}
+        description={t("admin.register.desc")}
         action={
           <Button asChild variant="outline">
-            <Link to="/app/admin/users">← Volver a Usuarios</Link>
+            <Link to="/app/admin/users">← {t("admin.register.back")}</Link>
           </Button>
         }
       />
 
       <div className="max-w-md">
-        <SectionCard title="Datos del usuario">
+        <SectionCard title={t("admin.register.user_data")}>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-lg bg-destructive/10 text-destructive p-3 text-sm">
@@ -113,26 +125,26 @@ function RegisterTrainerPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="nombre_completo">Nombre completo</Label>
+              <Label htmlFor="nombre_completo">{t("admin.register.full_name")}</Label>
               <Input
                 id="nombre_completo"
                 name="nombre_completo"
                 value={formData.nombre_completo}
                 onChange={handleChange}
-                placeholder="Carlos Ruiz Pérez"
+                placeholder={t("admin.register.full_name_placeholder")}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("admin.register.email")}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="usuario@ejemplo.es"
+                placeholder={t("admin.register.email_placeholder")}
                 required
               />
             </div>
@@ -158,27 +170,27 @@ function RegisterTrainerPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{t("admin.register.password")}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t("admin.register.password_placeholder")}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+              <Label htmlFor="confirmPassword">{t("admin.register.confirm_password")}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Repite la contraseña"
+                placeholder={t("admin.register.confirm_placeholder")}
                 required
               />
             </div>
@@ -190,7 +202,7 @@ function RegisterTrainerPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Registrando..." : "Registrar Usuario"}
+                {isLoading ? t("admin.register.registering") : t("admin.register.register")}
               </Button>
             </div>
           </form>

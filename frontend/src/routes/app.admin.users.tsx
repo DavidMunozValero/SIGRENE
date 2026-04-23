@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/users")({
   head: () => ({ meta: [{ title: "Usuarios — Admin" }] }),
@@ -25,11 +26,11 @@ interface Usuario {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: "Superadmin",
-  admin_federacion: "Admin Federación",
-  director_tecnico: "Director Técnico",
-  coach: "Entrenador",
-  swimmer: "Nadador",
+  superadmin: "app.superadmin",
+  admin_federacion: "app.admin_federacion",
+  director_tecnico: "app.director_tecnico",
+  coach: "app.coach",
+  swimmer: "app.swimmer",
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -47,9 +48,9 @@ const ESTADO_COLORS: Record<string, string> = {
 };
 
 const ESTADO_LABELS: Record<string, string> = {
-  aprobado: "Aprobado",
-  pendiente: "Pendiente",
-  rechazado: "Rechazado",
+  aprobado: "admin.users.approved",
+  pendiente: "admin.users.pending",
+  rechazado: "admin.users.rejected",
 };
 
 function formatDate(dateStr?: string): string {
@@ -69,6 +70,7 @@ function formatDate(dateStr?: string): string {
 }
 
 function EditUserModal({ user, onClose, onSave }: { user: Usuario; onClose: () => void; onSave: (data: Partial<Usuario>) => void }) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     nombre_completo: user.nombre_completo || "",
     rol: user.rol,
@@ -82,7 +84,7 @@ function EditUserModal({ user, onClose, onSave }: { user: Usuario; onClose: () =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-xl border border-border/60 bg-card p-6 shadow-elevated">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Editar Usuario</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">{t("admin.users.edit_title")}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
@@ -104,19 +106,19 @@ function EditUserModal({ user, onClose, onSave }: { user: Usuario; onClose: () =
               onChange={(e) => setFormData(prev => ({ ...prev, rol: e.target.value }))}
               className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
-              <option value="superadmin">Superadmin</option>
-              <option value="admin_federacion">Admin Federación</option>
-              <option value="director_tecnico">Director Técnico</option>
-              <option value="coach">Entrenador</option>
-              <option value="swimmer">Nadador</option>
+              <option value="superadmin">{t("app.superadmin")}</option>
+              <option value="admin_federacion">{t("app.admin_federacion")}</option>
+              <option value="director_tecnico">{t("app.director_tecnico")}</option>
+              <option value="coach">{t("app.coach")}</option>
+              <option value="swimmer">{t("app.swimmer")}</option>
             </select>
           </div>
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Cancelar
+              {t("admin.users.cancel")}
             </Button>
             <Button type="submit" variant="hero" className="flex-1">
-              Guardar
+              {t("admin.users.save")}
             </Button>
           </div>
         </form>
@@ -126,20 +128,20 @@ function EditUserModal({ user, onClose, onSave }: { user: Usuario; onClose: () =
 }
 
 function DeleteConfirmModal({ user, onClose, onConfirm }: { user: Usuario; onClose: () => void; onConfirm: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-xl border border-destructive/30 bg-card p-6 shadow-elevated">
-        <h3 className="text-lg font-semibold text-foreground mb-2">Eliminar Usuario</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">{t("admin.users.delete_title")}</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          ¿Estás seguro de que quieres eliminar al usuario <strong>{user.nombre_completo || user.email}</strong>? 
-          Esta acción no se puede deshacer y se eliminarán todos sus datos de forma permanente.
+          {t("admin.users.delete_confirm")} <strong>{user.nombre_completo || user.email}</strong>? {t("admin.users.delete_warning")}
         </p>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-            Cancelar
+            {t("admin.users.cancel")}
           </Button>
           <Button type="button" variant="destructive" onClick={onConfirm} className="flex-1">
-            Eliminar
+            {t("admin.users.delete")}
           </Button>
         </div>
       </div>
@@ -148,6 +150,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm }: { user: Usuario; onClo
 }
 
 function UsersPage() {
+  const { t } = useLanguage();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +170,7 @@ function UsersPage() {
       const response = await api.getUsuarios(params);
       setUsuarios(response.datos || []);
     } catch (err: any) {
-      setError(err.message || "Error cargando usuarios");
+      setError(err.message || t("admin.users.error_loading"));
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +183,7 @@ function UsersPage() {
       setEditingUser(null);
       loadUsuarios();
     } catch (err: any) {
-      alert(err.message || "Error actualizando usuario");
+      alert(err.message || t("admin.users.error_update"));
     }
   };
 
@@ -191,14 +194,14 @@ function UsersPage() {
       setDeletingUser(null);
       loadUsuarios();
     } catch (err: any) {
-      alert(err.message || "Error eliminando usuario");
+      alert(err.message || t("admin.users.error_delete"));
     }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Usuarios" description="Cargando..." />
+        <PageHeader title={t("admin.users.title_page")} description={t("admin.users.loading")} />
         <div className="h-64 rounded-xl bg-muted animate-pulse" />
       </div>
     );
@@ -215,11 +218,11 @@ function UsersPage() {
   return (
     <>
       <PageHeader
-        title="Usuarios"
-        description={`${usuarios.length} usuarios registrados en el sistema.`}
+        title={t("admin.users.title_page")}
+        description={`${usuarios.length} ${t("admin.users.count")}`}
         action={
           <Button asChild variant="hero">
-            <Link to="/app/admin/register-trainer">+ Registrar Usuario</Link>
+            <Link to="/app/admin/register-trainer">+ {t("admin.users.register")}</Link>
           </Button>
         }
       />
@@ -230,30 +233,30 @@ function UsersPage() {
           size="sm"
           onClick={() => setFilterRol(null)}
         >
-          Todos ({usuarios.length})
+          {t("admin.users.filter_all")} ({usuarios.length})
         </Button>
-        {Object.entries(ROLE_LABELS).map(([rol, label]) => (
+        {Object.entries(ROLE_LABELS).map(([rol, labelKey]) => (
           <Button
             key={rol}
             variant={filterRol === rol ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterRol(rol)}
           >
-            {label} ({usuarios.filter(u => u.rol === rol).length})
+            {t(labelKey)} ({usuarios.filter(u => u.rol === rol).length})
           </Button>
         ))}
       </div>
 
-      <SectionCard title={`${usuarios.length} usuarios`}>
+      <SectionCard title={`${usuarios.length} ${t("admin.users.title_page")}`}>
         <div className="-m-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground tracking-wider">
               <tr>
-                <th className="text-left px-5 py-3">Usuario</th>
-                <th className="text-left px-5 py-3">Rol</th>
-                <th className="text-left px-5 py-3">Estado</th>
-                <th className="text-left px-5 py-3">Fecha registro</th>
-                <th className="text-right px-5 py-3">Acciones</th>
+                <th className="text-left px-5 py-3">{t("admin.users.table.user")}</th>
+                <th className="text-left px-5 py-3">{t("admin.users.table.role")}</th>
+                <th className="text-left px-5 py-3">{t("admin.users.table.status")}</th>
+                <th className="text-left px-5 py-3">{t("admin.users.table.date")}</th>
+                <th className="text-right px-5 py-3">{t("admin.users.table.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -265,19 +268,19 @@ function UsersPage() {
                         {(u.nombre_completo?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) || u.email?.[0] || "?").toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{u.nombre_completo || "Sin nombre"}</p>
+                        <p className="font-medium text-foreground">{u.nombre_completo || t("admin.users.no_name")}</p>
                         <p className="text-xs text-muted-foreground">{u.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-4">
                     <span className={`text-xs font-medium px-2 py-1 rounded-full ${ROLE_COLORS[u.rol] || "bg-muted text-muted-foreground"}`}>
-                      {ROLE_LABELS[u.rol] || u.rol}
+                      {t(ROLE_LABELS[u.rol])}
                     </span>
                   </td>
                   <td className="px-5 py-4">
                     <span className={`text-xs font-medium px-2 py-1 rounded-full ${ESTADO_COLORS[u.estado_aprobacion] || "bg-muted text-muted-foreground"}`}>
-                      {ESTADO_LABELS[u.estado_aprobacion] || u.estado_aprobacion}
+                      {t(ESTADO_LABELS[u.estado_aprobacion])}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-muted-foreground">
@@ -290,7 +293,7 @@ function UsersPage() {
                         size="sm"
                         onClick={() => setEditingUser(u)}
                       >
-                        Editar
+                        {t("admin.users.edit")}
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -298,7 +301,7 @@ function UsersPage() {
                         className="text-destructive hover:text-destructive"
                         onClick={() => setDeletingUser(u)}
                       >
-                        Eliminar
+                        {t("admin.users.delete")}
                       </Button>
                     </div>
                   </td>

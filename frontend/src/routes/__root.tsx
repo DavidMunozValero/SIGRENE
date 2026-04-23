@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute } from "@tanstack/react-router";
+import { LanguageProvider } from "@/lib/i18n";
+import { CookieBanner } from "@/components/CookieBanner";
 
 import appCss from "../styles.css?url";
 
@@ -51,5 +53,10 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <LanguageProvider>
+      <Outlet />
+      <CookieBanner />
+    </LanguageProvider>
+  );
 }

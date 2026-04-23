@@ -3,27 +3,29 @@ import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/invite")({
   head: () => ({
     meta: [
-      { title: "Aceptar invitación — SIGRENE" },
-      { name: "description", content: "Acepta tu invitación de entrenador o nadador en SIGRENE." },
+      { title: "invite.page.title" },
+      { name: "description", content: "invite.page.desc" },
     ],
   }),
   component: InvitePage,
 });
 
 function InvitePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   return (
     <AuthShell
-      title="Únete a tu federación"
-      subtitle="Has sido invitado a SIGRENE. Completa tus datos para empezar."
+      title={t("invite.title")}
+      subtitle={t("invite.subtitle")}
       footer={
         <>
-          ¿Ya tienes cuenta?{" "}
-          <Link to="/login" className="text-aqua font-medium hover:underline">Entrar</Link>
+          {t("invite.has_account")}{" "}
+          <Link to="/login" className="text-aqua font-medium hover:underline">{t("invite.sign_in")}</Link>
         </>
       }
     >
@@ -41,19 +43,19 @@ function InvitePage() {
         className="space-y-4"
       >
         <div className="space-y-1.5">
-          <Label htmlFor="code">Código de invitación</Label>
+          <Label htmlFor="code">{t("invite.code")}</Label>
           <Input id="code" defaultValue="SIG-MAD-7H4P" required />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="name">Nombre completo</Label>
-          <Input id="name" placeholder="Carlos Ruiz" required />
+          <Label htmlFor="name">{t("invite.full_name")}</Label>
+          <Input id="name" placeholder={t("invite.full_name_placeholder")} required />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">Crea una contraseña</Label>
-          <Input id="password" type="password" placeholder="Mínimo 8 caracteres" required />
+          <Label htmlFor="password">{t("invite.create_password")}</Label>
+          <Input id="password" type="password" placeholder={t("invite.password_placeholder")} required />
         </div>
         <Button type="submit" variant="hero" size="lg" className="w-full">
-          Aceptar invitación
+          {t("invite.accept")}
         </Button>
       </form>
     </AuthShell>

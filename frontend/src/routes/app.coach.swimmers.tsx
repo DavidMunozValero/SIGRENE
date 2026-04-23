@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageHeader, SectionCard } from "@/components/dashboard/Cards";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/coach/swimmers")({
   head: () => ({ meta: [{ title: "Nadadores — Entrenador" }] }),
@@ -19,6 +20,7 @@ interface Nadador {
 }
 
 function SwimmersPage() {
+  const { t } = useLanguage();
   const [nadadores, setNadadores] = useState<Nadador[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ function SwimmersPage() {
         const response = await api.getNadadores();
         setNadadores(response.datos || []);
       } catch (err: any) {
-        setError(err.message || "Error cargando nadadores");
+        setError(err.message || t("coach.swimmers.error_loading"));
       } finally {
         setIsLoading(false);
       }
@@ -41,7 +43,7 @@ function SwimmersPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Nadadores" description="Cargando..." />
+        <PageHeader title={t("coach.swimmers.title_page")} description={t("coach.swimmers.loading")} />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-32 rounded-xl bg-muted animate-pulse" />
@@ -62,15 +64,15 @@ function SwimmersPage() {
   return (
     <>
       <PageHeader
-        title="Nadadores"
-        description={`${nadadores.length} nadadores registrados.`}
-        action={<Button variant="hero">+ Registrar Nadador</Button>}
+        title={t("coach.swimmers.title_page")}
+        description={`${nadadores.length} ${t("coach.swimmers.count")}`}
+        action={<Button variant="hero">+ {t("coach.swimmers.register")}</Button>}
       />
-      <SectionCard title={`${nadadores.length} nadadores`}>
+      <SectionCard title={`${nadadores.length} ${t("coach.swimmers.count")}`}>
         {nadadores.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">
-            No hay nadadores registrados. <br />
-            <span className="text-sm">Crea tu primer nadador desde el panel de administración.</span>
+            {t("coach.swimmers.no_swimmers")} <br />
+            <span className="text-sm">{t("coach.swimmers.no_swimmers_desc")}</span>
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 -m-5 p-5">
@@ -96,7 +98,7 @@ function SwimmersPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">{s.nombre}</p>
                       <p className="text-xs text-muted-foreground">
-                        {age ? `${age} años` : "Edad desc."} · {s.club || "Sin club"}
+                        {age ? `${age} años` : t("coach.swimmers.age")} · {s.club || t("coach.swimmers.no_club")}
                       </p>
                     </div>
                   </div>
