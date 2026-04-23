@@ -4,6 +4,7 @@ This module initializes the web server, handles the database connection
 lifecycle, and defines the API routes (endpoints) for the frontend to consume.
 """
 
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta
 from typing import Optional, List
@@ -105,9 +106,12 @@ app = FastAPI(
 )
 
 
+_allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+_allowed_list = [o.strip() for o in _allowed_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_allowed_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
