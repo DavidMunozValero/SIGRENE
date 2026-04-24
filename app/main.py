@@ -1130,18 +1130,30 @@ class ContactFormRequest(BaseModel):
 
 
 @app.post("/api/v1/contacto")
-async def submit_contact_form(form: ContactFormRequest):
+async def submit_contact_form(request: Request):
     """Submit a contact form message.
 
     Sends an email to the admin with the contact form contents.
     This endpoint is public (no authentication required).
 
     Args:
-        form: Contact form data.
+        request: Raw request object for logging.
 
     Returns:
         dict: Success message.
     """
+    body = await request.json()
+    print(f"[DEBUG] Contacto received body: {body}")
+
+    try:
+        form = ContactFormRequest(**body)
+    except Exception as e:
+        print(f"[ERROR] Contacto validation error: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {e}"
+        )
+
     try:
         email_service = get_email_service()
         print(f"[DEBUG] Sending contact email via {email_service.provider_name}")
