@@ -13,6 +13,9 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.middleware.base import BaseHTTPMiddleware
+from collections import defaultdict, deque
+from datetime import datetime, timedelta
+import threading
 from pydantic import BaseModel, EmailStr, Field
 
 from app.database.mongodb import DatabaseClient
@@ -29,6 +32,41 @@ from app.models.schemas import (
 )
 from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user
 from app.services.calculations import calculate_session_metrics, calculate_acwr
+
+
+class SimpleRateLimiter:
+    """Simple in-memory rate limiter per IP for login attempts."""
+
+    def __init__(self, max_attempts: int = 5, window_seconds: int = 60):
+        self.max_attempts = max_attempts
+        self.window_seconds = window_seconds
+        self._store: dict[str, deque] = defaultdict(deque)
+        self._lock = threading.Lock()
+
+    def _clean_old(self, ip: str) -> None:
+        cutoff = datetime.now() - timedelta(seconds=self.window_seconds)
+        while self._store[ip] and self._store[ip][0] < cutoff:
+            self._store[ip].popleft()
+
+    def is_allowed(self, ip: str) -> bool:
+        with self._lock:
+            self._clean_old(ip)
+            if len(self._store[ip]) >= self.max_attempts:
+                return False
+            self._store[ip].append(datetime.now())
+            return True
+
+    def remaining(self, ip: str) -> int:
+        with self._lock:
+            self._clean_old(ip)
+            return max(0, self.max_attempts - len(self._store[ip]))
+
+    def reset(self, ip: str) -> None:
+        with self._lock:
+            self._store[ip].clear()
+
+
+login_limiter = SimpleRateLimiter(max_attempts=5, window_seconds=60)
 
 
 def _sanitize_for_mongo(data: dict) -> dict:
@@ -955,14 +993,16 @@ async def update_mi_perfil(
 
 
 @app.post("/api/v1/login")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     """Authenticates a user and returns a JWT access token.
 
     Verifies the provided email and password against the MongoDB database.
     If valid, generates a signed JWT containing the user's email and role.
     Users with estado_aprobacion 'pendiente' or 'rechazado' cannot login.
-    
+
     Sets a httpOnly cookie for session management (RGPD compliant).
+
+    Rate limited to 5 attempts per minute per IP to prevent brute force attacks.
 
     Args:
         form_data (OAuth2PasswordRequestForm): Standard OAuth2 form containing
@@ -975,6 +1015,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         HTTPException: If authentication fails (wrong email or password) or
             if the user is not approved.
     """
+    client_ip = request.client.host if request.client else "unknown"
+    if not login_limiter.is_allowed(client_ip):
+        remaining = login_limiter.remaining(client_ip)
+        return JSONResponse(
+            status_code=429,
+            content={
+                "detail": f"Demasiados intentos de login. Prueba de nuevo en un minuto. Intentos restantes: {remaining}"
+            },
+            headers={"Retry-After": "60", "X-RateLimit-Remaining": str(remaining)}
+        )
+
     db = DatabaseClient.get_db()
 
     # 1. Find user by email (OAuth2 uses the field 'username' by default)
@@ -1010,6 +1061,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
 
     # 5. Set httpOnly cookie for session management
+    login_limiter.reset(client_ip)
     response = JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
     response.set_cookie(
         key="sigrene_session",
