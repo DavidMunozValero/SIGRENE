@@ -1144,14 +1144,16 @@ async def submit_contact_form(form: ContactFormRequest):
     """
     try:
         email_service = get_email_service()
+        print(f"[DEBUG] Sending contact email via {email_service.provider_name}")
         await email_service.send(contact_form_notification(
             name=form.name,
             email=form.email,
             subject=form.subject,
             message=form.message,
         ))
+        print(f"[DEBUG] Contact email sent successfully")
     except Exception as e:
-        print(f"[WARNING] Failed to send contact form email: {e}")
+        print(f"[ERROR] Failed to send contact form email: {type(e).__name__}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_BAD_REQUEST,
             detail="Error al enviar el mensaje. Inténtalo de nuevo más tarde."
@@ -1202,13 +1204,15 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
 
     try:
         email_service = get_email_service()
+        print(f"[DEBUG] Sending password recovery via {email_service.provider_name}")
         await email_service.send(password_recovery_email(
             email=request.email,
             reset_url=reset_url,
             expires_minutes=30,
         ))
+        print(f"[DEBUG] Password recovery email sent successfully")
     except Exception as e:
-        print(f"[WARNING] Failed to send password recovery email: {e}")
+        print(f"[ERROR] Failed to send password recovery email: {type(e).__name__}: {e}")
 
     return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
 
