@@ -1159,14 +1159,14 @@ async def submit_contact_form(request: Request):
     try:
         email_service = get_email_service()
         print(f"[DEBUG] Sending contact email via {email_service.provider_name}")
-admin_email = os.environ.get("ADMIN_EMAIL", "admin@sigrene.es")
-    await email_service.send(contact_form_notification(
-        name=form.name,
-        email=form.email,
-        subject=form.subject,
-        message=form.message,
-        admin_email=admin_email,
-    ))
+        admin_email = os.environ.get("ADMIN_EMAIL", "admin@sigrene.es")
+        await email_service.send(contact_form_notification(
+            name=form.name,
+            email=form.email,
+            subject=form.subject,
+            message=form.message,
+            admin_email=admin_email,
+        ))
         print(f"[DEBUG] Contact email sent successfully")
     except Exception as e:
         print(f"[ERROR] Failed to send contact form email: {type(e).__name__}: {e}")
