@@ -94,6 +94,9 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.message": "Mensaje",
     "contact.message_placeholder": "¿En qué puedo ayudarte?",
     "contact.send": "Enviar mensaje",
+    "contact.sending": "Enviando...",
+    "contact.success": "Mensaje enviado correctamente. Te responderemos pronto.",
+    "contact.error": "Error al enviar el mensaje. Inténtalo de nuevo.",
 
     // Login page
     "login.page.title": "Entrar — SIGRENE",
