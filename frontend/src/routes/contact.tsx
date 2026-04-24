@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/lib/i18n";
+import { useState } from "react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -19,20 +21,34 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { t } = useLanguage();
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+
     const form = e.currentTarget;
     const name = (form.elements.namedItem("name") as HTMLInputElement).value;
     const org = (form.elements.namedItem("org") as HTMLInputElement).value;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const msg = (form.elements.namedItem("msg") as HTMLTextAreaElement).value;
 
-    const subject = encodeURIComponent(`Consulta de ${name}${org ? ` - ${org}` : ""}`);
-    const body = encodeURIComponent(
-      `Nombre: ${name}\nOrganización: ${org || "No indicada"}\nEmail: ${email}\n\nMensaje:\n${msg}`
-    );
+    const subject = `Consulta de ${name}${org ? ` - ${org}` : ""}`;
 
-    window.location.href = `mailto:info@davidmunozvalero.com?subject=${subject}&body=${body}`;
+    try {
+      await api.request("/contacto", {
+        method: "POST",
+        body: JSON.stringify({ name, email, subject, message: msg }),
+      });
+      setSubmitStatus("success");
+      form.reset();
+    } catch (error) {
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -101,9 +117,19 @@ function ContactPage() {
               <Label htmlFor="msg">{t("contact.message")}</Label>
               <Textarea id="msg" name="msg" rows={5} placeholder={t("contact.message_placeholder")} required />
             </div>
-            <Button type="submit" variant="hero" size="lg" className="w-full">
-              {t("contact.send")}
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? t("contact.sending") : t("contact.send")}
             </Button>
+            {submitStatus === "success" && (
+              <p className="text-sm text-green-600 dark:text-green-500 text-center">
+                {t("contact.success")}
+              </p>
+            )}
+            {submitStatus === "error" && (
+              <p className="text-sm text-red-600 dark:text-red-500 text-center">
+                {t("contact.error")}
+              </p>
+            )}
           </form>
         </div>
       </main>
