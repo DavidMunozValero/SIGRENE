@@ -1167,6 +1167,7 @@ class PasswordRecoveryRequest(BaseModel):
 class PasswordResetRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
 
 
 @app.post("/api/v1/usuarios/recuperar")
@@ -1185,6 +1186,10 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
     usuario = coleccion_usuarios.find_one({"email": request.email})
 
     if not usuario:
+        return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
+
+    estado = usuario.get("estado_aprobacion", "aprobado")
+    if estado != "aprobado":
         return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
 
     reset_token = create_access_token(
@@ -1213,12 +1218,21 @@ async def reset_password(request: PasswordResetRequest):
     """Reset password using a recovery token.
 
     Args:
-        request: Token and new password.
+        request: Token, new password and confirmation.
 
     Returns:
         dict: Success message.
+
+    Raises:
+        HTTPException: If tokens don't match or are invalid.
     """
     from app.services.auth import decode_token
+
+    if request.new_password != request.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Las contraseñas no coinciden"
+        )
 
     try:
         token_data = decode_token(request.token)
