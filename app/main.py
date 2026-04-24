@@ -1214,6 +1214,9 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
     frontend_url = os.environ.get("FRONTEND_URL", "https://sigrene.vercel.app")
     reset_url = f"{frontend_url}/reset-password?token={reset_token}"
 
+    print(f"[DEBUG] Password recovery - email to send: {request.email}")
+    print(f"[DEBUG] Password recovery - reset_url: {reset_url}")
+
     try:
         email_service = get_email_service()
         print(f"[DEBUG] Sending password recovery via {email_service.provider_name}")
@@ -1225,6 +1228,8 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
         print(f"[DEBUG] Password recovery email sent successfully")
     except Exception as e:
         print(f"[ERROR] Failed to send password recovery email: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
 
     return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
 
