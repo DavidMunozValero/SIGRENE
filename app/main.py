@@ -32,6 +32,15 @@ from app.models.schemas import (
 )
 from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user
 from app.services.calculations import calculate_session_metrics, calculate_acwr
+from app.services.email.factory import get_email_service
+from app.services.email.templates import (
+    contact_form_notification,
+    new_registration_notification,
+    account_approved_email,
+    account_rejected_email,
+    registration_pending_email,
+    password_recovery_email,
+)
 
 
 class SimpleRateLimiter:
@@ -593,10 +602,8 @@ async def registrar_usuario(usuario: UsuarioCreate):
     # 2. Hash the password
     hashed_pwd = get_password_hash(usuario.password)
 
-    # 3. Determine approval status based on role
-    # admin_federacion requires superadmin approval, others are auto-approved
-    rol_requiere_aprobacion = usuario.rol == "admin_federacion"
-    estado = "pendiente" if rol_requiere_aprobacion else "aprobado"
+    # 3. All registrations are pending approval by superadmin
+    estado = "pendiente"
 
     # 4. Prepare the DB document (exclude plain password, include hashed)
     usuario_db = UsuarioInDB(
@@ -612,13 +619,28 @@ async def registrar_usuario(usuario: UsuarioCreate):
     # 5. Insert into MongoDB
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
-    if estado == "pendiente":
-        return {
-            "message": f"El usuario {usuario.email} ha sido registrado. Su cuenta está pendiente de aprobación por un administrador.",
-            "estado_aprobacion": estado
-        }
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@sigrene.es")
 
-    return {"message": f"Usuario {usuario.email} registrado correctamente."}
+    try:
+        email_service = get_email_service()
+        await email_service.send(registration_pending_email(
+            email=usuario.email,
+            name=usuario.nombre_completo,
+            user_role=usuario.rol,
+        ))
+        await email_service.send(new_registration_notification(
+            user_email=usuario.email,
+            user_name=usuario.nombre_completo,
+            user_role=usuario.rol,
+            admin_email=admin_email,
+        ))
+    except Exception as e:
+        print(f"[WARNING] Failed to send registration email: {e}")
+
+    return {
+        "message": f"El usuario {usuario.email} ha sido registrado. Su cuenta está pendiente de aprobación por un administrador.",
+        "estado_aprobacion": estado
+    }
 
 
 class UsuarioResponse(BaseModel):
@@ -787,6 +809,15 @@ async def aprobar_usuario(
         }
     )
 
+    try:
+        email_service = get_email_service()
+        await email_service.send(account_approved_email(
+            email=email,
+            name=usuario.get("nombre_completo", ""),
+        ))
+    except Exception as e:
+        print(f"[WARNING] Failed to send approval email: {e}")
+
     return UpdateResponse(
         message=f"Usuario {email} aprobado correctamente",
         modified_count=result.modified_count
@@ -837,6 +868,15 @@ async def rechazar_usuario(
             }
         }
     )
+
+    try:
+        email_service = get_email_service()
+        await email_service.send(account_rejected_email(
+            email=email,
+            name=usuario.get("nombre_completo", ""),
+        ))
+    except Exception as e:
+        print(f"[WARNING] Failed to send rejection email: {e}")
 
     return UpdateResponse(
         message=f"Usuario {email} rechazado correctamente",
@@ -1082,6 +1122,44 @@ async def logout():
     return response
 
 
+class ContactFormRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    subject: str = Field(..., min_length=5, max_length=200)
+    message: str = Field(..., min_length=10, max_length=5000)
+
+
+@app.post("/api/v1/contacto")
+async def submit_contact_form(form: ContactFormRequest):
+    """Submit a contact form message.
+
+    Sends an email to the admin with the contact form contents.
+    This endpoint is public (no authentication required).
+
+    Args:
+        form: Contact form data.
+
+    Returns:
+        dict: Success message.
+    """
+    try:
+        email_service = get_email_service()
+        await email_service.send(contact_form_notification(
+            name=form.name,
+            email=form.email,
+            subject=form.subject,
+            message=form.message,
+        ))
+    except Exception as e:
+        print(f"[WARNING] Failed to send contact form email: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_BAD_REQUEST,
+            detail="Error al enviar el mensaje. Inténtalo de nuevo más tarde."
+        )
+
+    return {"message": "Mensaje enviado correctamente. Nos pondremos en contacto contigo pronto."}
+
+
 class PasswordRecoveryRequest(BaseModel):
     email: EmailStr
 
@@ -1114,7 +1192,18 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
         expires_delta=timedelta(minutes=30)
     )
 
-    print(f"[DEBUG] Token de recuperación para {request.email}: {reset_token}")
+    frontend_url = os.environ.get("FRONTEND_URL", "https://sigrene.vercel.app")
+    reset_url = f"{frontend_url}/reset-password?token={reset_token}"
+
+    try:
+        email_service = get_email_service()
+        await email_service.send(password_recovery_email(
+            email=request.email,
+            reset_url=reset_url,
+            expires_minutes=30,
+        ))
+    except Exception as e:
+        print(f"[WARNING] Failed to send password recovery email: {e}")
 
     return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
 
