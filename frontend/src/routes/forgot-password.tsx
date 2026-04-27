@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/lib/i18n";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -19,6 +20,27 @@ export const Route = createFileRoute("/forgot-password")({
 function ForgotPage() {
   const { t } = useLanguage();
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+
+    try {
+      await api.requestPasswordRecovery(email);
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al enviar el correo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell
       title={sent ? "Revisa tu correo" : t("forgot.title")}
@@ -34,19 +56,14 @@ function ForgotPage() {
       }
     >
       {!sent ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-          }}
-          className="space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">{t("forgot.email")}</Label>
-            <Input id="email" type="email" placeholder={t("forgot.email_placeholder")} required />
+            <Input id="email" name="email" type="email" placeholder={t("forgot.email_placeholder")} required />
           </div>
-          <Button type="submit" variant="hero" size="lg" className="w-full">
-            {t("forgot.send")}
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
+            {loading ? t("forgot.sending") : t("forgot.send")}
           </Button>
         </form>
       ) : (

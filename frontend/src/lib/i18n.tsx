@@ -149,7 +149,21 @@ const translations: Record<Language, Record<string, string>> = {
     "forgot.email": "Email",
     "forgot.email_placeholder": "tu@federacion.es",
     "forgot.send": "Enviar enlace",
+    "forgot.sending": "Enviando...",
     "forgot.expiry": "El enlace expirará en 1 hora.",
+
+    // Reset password page
+    "reset.page.title": "Nueva contraseña — SIGRENE",
+    "reset.page.desc": "Establece tu nueva contraseña en SIGRENE.",
+    "reset.title": "Nueva contraseña",
+    "reset.subtitle": "Introduce tu nueva contraseña.",
+    "reset.back": "Volver al login",
+    "reset.new_password": "Nueva contraseña",
+    "reset.password_placeholder": "Mínimo 8 caracteres",
+    "reset.confirm_password": "Confirmar contraseña",
+    "reset.confirm_placeholder": "Repite la nueva contraseña",
+    "reset.submit": "Restablecer contraseña",
+    "reset.resetting": "Restableciendo...",
 
     // Invite page
     "invite.page.title": "Aceptar invitación — SIGRENE",
@@ -709,7 +723,21 @@ const translations: Record<Language, Record<string, string>> = {
     "forgot.email": "Email",
     "forgot.email_placeholder": "your@federation.com",
     "forgot.send": "Send link",
+    "forgot.sending": "Sending...",
     "forgot.expiry": "The link will expire in 1 hour.",
+
+    // Reset password page
+    "reset.page.title": "New password — SIGRENE",
+    "reset.page.desc": "Set your new password in SIGRENE.",
+    "reset.title": "New password",
+    "reset.subtitle": "Enter your new password.",
+    "reset.back": "Back to sign in",
+    "reset.new_password": "New password",
+    "reset.password_placeholder": "Minimum 8 characters",
+    "reset.confirm_password": "Confirm password",
+    "reset.confirm_placeholder": "Repeat new password",
+    "reset.submit": "Reset password",
+    "reset.resetting": "Resetting...",
 
     // Invite page
     "invite.page.title": "Accept invitation — SIGRENE",
