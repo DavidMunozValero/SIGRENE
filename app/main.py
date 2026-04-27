@@ -30,9 +30,10 @@ from app.models.schemas import (
     AnalisisCompeticion, AnalisisCompeticionResponse,
     ACWRResponse, ListaResponse, UpdateResponse, DeleteResponse,
     NadadorCreate, NadadorUpdate, NadadorResponse,
-    TrainingGroupCreate, TrainingGroupUpdate, TrainingGroupResponse
+    TrainingGroupCreate, TrainingGroupUpdate, TrainingGroupResponse,
+    InvitacionCreate, InvitacionResponse, InvitacionListResponse, InvitacionAceptar,
 )
-from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user
+from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user, decode_token
 from app.services.calculations import calculate_session_metrics, calculate_acwr
 from app.services.email.factory import get_email_service
 from app.services.email.templates import (
@@ -42,6 +43,7 @@ from app.services.email.templates import (
     account_rejected_email,
     registration_pending_email,
     password_recovery_email,
+    invitation_email,
 )
 
 
@@ -95,7 +97,7 @@ def _sanitize_for_mongo(data: dict) -> dict:
 
 def _check_swimmer_access(db, nadador_id: str, coach_id: str, user_role: str) -> bool:
     """Check if coach has access to swimmer. Returns True if access granted, False otherwise."""
-    if user_role in ["admin_federacion", "superadmin"]:
+    if user_role == "superadmin":
         return True
     
     nadador = db["nadadores"].find_one({
@@ -110,7 +112,7 @@ def _check_swimmer_access(db, nadador_id: str, coach_id: str, user_role: str) ->
 
 def _get_coach_swimmer_ids(db, coach_id: str, user_role: str) -> List[str]:
     """Get list of swimmer IDs that coach has access to."""
-    if user_role in ["admin_federacion", "superadmin"]:
+    if user_role == "superadmin":
         swimmers = db["nadadores"].find({}, {"pseudonym": 1, "id_seudonimo": 1})
         return [s.get("pseudonym") or s["id_seudonimo"] for s in swimmers]
     
@@ -141,6 +143,9 @@ async def lifespan(app: FastAPI):
     db["controles_fisiologicos"].create_index("nadador_id")
     db["composicion_corporal"].create_index("nadador_id")
     db["analisis_competicion"].create_index("nadador_id")
+    db["invitaciones"].create_index("token", unique=True)
+    db["invitaciones"].create_index("email_invitado")
+    db["invitaciones"].create_index("invitador_email")
     
     yield
     # Shutdown: Disconnect from MongoDB
@@ -263,7 +268,7 @@ async def list_registros_diarios(
     query = {}
     
     # Access control: filter by coach's swimmers
-    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
+    if user_role not in ["superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return RegistroDiarioListResponse(total=0, skip=skip, limit=limit, registros=[])
@@ -271,7 +276,7 @@ async def list_registros_diarios(
 
     if nadador_id:
         # Check access to specific swimmer
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -330,14 +335,14 @@ async def get_dashboard_stats(
     query = {}
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
+    if user_role not in ["superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return DashboardStats()
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -463,7 +468,7 @@ async def get_registro_diario(
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+    if user_role not in ["superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
 
     return RegistroDiarioResponse(
@@ -502,7 +507,7 @@ async def get_registros_by_nadador(
     db = DatabaseClient.get_db()
 
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+    if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     coleccion = db["registros_diarios"]
@@ -542,7 +547,7 @@ async def create_registro_diario(
         user_role = current_user.get("rol", "coach")
 
         # Access control
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
+        if user_role not in ["superadmin"] and not _check_swimmer_access(
             DatabaseClient.get_db(), registro.nadador_id, coach_id, user_role
         ):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -573,75 +578,349 @@ async def create_registro_diario(
 
 
 @app.post("/api/v1/usuarios/registrar", status_code=status.HTTP_201_CREATED)
-async def registrar_usuario(usuario: UsuarioCreate):
-    """Registers a new user in the platform.
+async def registrar_usuario(
+    usuario: UsuarioCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Registers a new user directly (superadmin only).
 
-    Validates that the email is not already in use, hashes the password
-    securely, and stores the user profile in MongoDB.
-
-    Los roles admin_federacion quedan pendientes de aprobación por un superadmin.
-    Los roles coach y swimmer se approved automáticamente.
+    Superadmin can create users of any role directly. All other roles
+    should use the invitation system instead.
 
     Args:
         usuario (UsuarioCreate): The user data including the plain password.
+        current_user: The authenticated superadmin user.
 
     Returns:
         dict: A success message.
 
     Raises:
-        HTTPException: If the email is already registered.
+        HTTPException: If the email is already registered or user is not superadmin.
     """
+    if current_user.get("rol") != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo superadmin puede registrar usuarios directamente"
+        )
+
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
 
-    # 1. Check if user already exists
     if coleccion_usuarios.find_one({"email": usuario.email}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El email ya está registrado en SIGRENE"
         )
 
-    # 2. Hash the password
     hashed_pwd = get_password_hash(usuario.password)
 
-    # 3. All registrations are pending approval by superadmin
-    estado = "pendiente"
-
-    # 4. Prepare the DB document (exclude plain password, include hashed)
     usuario_db = UsuarioInDB(
         email=usuario.email,
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
         nadadores_asignados=usuario.nadadores_asignados,
         hashed_password=hashed_pwd,
-        estado_aprobacion=estado,
+        estado_aprobacion="aprobado",
+        aprobado_por=current_user.get("sub"),
+        fecha_aprobacion=datetime.utcnow(),
         fecha_registro=datetime.utcnow()
     )
 
-    # 5. Insert into MongoDB
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@sigrene.es")
+    return {
+        "message": f"El usuario {usuario.email} ha sido creado y aprobado correctamente.",
+        "estado_aprobacion": "aprobado"
+    }
+
+
+@app.post("/api/v1/invitaciones/", status_code=status.HTTP_201_CREATED)
+async def crear_invitacion(
+    invitacion: InvitacionCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create an invitation to join the platform.
+
+    Only director_tecnico and coach can send invitations.
+    Director_tecnico can invite coaches.
+    Coach can invite swimmers.
+
+    The invited user will receive an email with a unique link to complete registration.
+
+    Args:
+        invitacion: Email and role to invite.
+
+    Returns:
+        dict: Success message with invitation token.
+    """
+    user_role = current_user.get("rol", "")
+    invitador_email = current_user.get("sub")
+
+    if user_role == "director_tecnico":
+        if invitacion.rol_asignado not in ["coach"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Director técnico solo puede invitar a entrenadores"
+            )
+    elif user_role == "coach":
+        if invitacion.rol_asignado not in ["swimmer"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Entrenador solo puede invitar a nadadores"
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para enviar invitaciones"
+        )
+
+    db = DatabaseClient.get_db()
+
+    if db["usuarios"].find_one({"email": invitacion.email_invitado}):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este email ya está registrado en la plataforma"
+        )
+
+    existing = db["invitaciones"].find_one({
+        "email_invitado": invitacion.email_invitado,
+        "estado": "pendiente"
+    })
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe una invitación pendiente para este email"
+        )
+
+    token = create_access_token(
+        data={
+            "sub": invitacion.email_invitado,
+            "rol": invitacion.rol_asignado,
+            "type": "invitation",
+            "invitador": invitador_email
+        },
+        expires_delta=timedelta(days=7)
+    )
+
+    invitacion_doc = {
+        "email_invitado": invitacion.email_invitado,
+        "rol_asignado": invitacion.rol_asignado,
+        "token": token,
+        "invitador_email": invitador_email,
+        "estado": "pendiente",
+        "fecha_creacion": datetime.utcnow(),
+        "fecha_expiracion": datetime.utcnow() + timedelta(days=7)
+    }
+
+    db["invitaciones"].insert_one(invitacion_doc)
+
+    frontend_url = os.environ.get("FRONTEND_URL", "https://sigrene.vercel.app")
+    invitation_url = f"{frontend_url}/invite?token={token}"
+
+    invitador_nombre = db["usuarios"].find_one(
+        {"email": invitador_email},
+        {"nombre_completo": 1}
+    )
+    inviting_org = invitador_nombre.get("nombre_completo", "Un administrador") if invitador_nombre else "Un administrador"
 
     try:
         email_service = get_email_service()
-        await email_service.send(registration_pending_email(
-            email=usuario.email,
-            name=usuario.nombre_completo,
-            user_role=usuario.rol,
-        ))
-        await email_service.send(new_registration_notification(
-            user_email=usuario.email,
-            user_name=usuario.nombre_completo,
-            user_role=usuario.rol,
-            admin_email=admin_email,
+        await email_service.send(invitation_email(
+            email=invitacion.email_invitado,
+            name=invitacion.email_invitado.split("@")[0],
+            inviting_organization=inviting_org,
+            role_assigned=invitacion.rol_asignado,
+            invitation_url=invitation_url,
+            expires_days=7
         ))
     except Exception as e:
-        print(f"[WARNING] Failed to send registration email: {e}")
+        print(f"[WARNING] Failed to send invitation email: {e}")
 
     return {
-        "message": f"El usuario {usuario.email} ha sido registrado. Su cuenta está pendiente de aprobación por un administrador.",
-        "estado_aprobacion": estado
+        "message": f"Invitación enviada a {invitacion.email_invitado}",
+        "token": token[:20] + "..."
+    }
+
+
+@app.get("/api/v1/invitaciones/", response_model=InvitacionListResponse)
+async def listar_invitaciones_enviadas(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: dict = Depends(get_current_user)
+):
+    """List invitations sent by the current user.
+
+    Returns a list of invitations sent by the authenticated user.
+    """
+    invitador_email = current_user.get("sub")
+    user_role = current_user.get("rol", "")
+
+    if user_role not in ["director_tecnico", "coach", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para ver invitaciones"
+        )
+
+    db = DatabaseClient.get_db()
+
+    query = {}
+    if user_role != "superadmin":
+        query["invitador_email"] = invitador_email
+
+    total = db["invitaciones"].count_documents(query)
+    cursor = db["invitaciones"].find(query).skip(skip).limit(limit).sort("fecha_creacion", -1)
+
+    invitaciones = []
+    for doc in cursor:
+        invitaciones.append(InvitacionResponse(
+            id=str(doc["_id"]),
+            email_invitado=doc["email_invitado"],
+            rol_asignado=doc["rol_asignado"],
+            token=doc["token"],
+            invitador_email=doc["invitador_email"],
+            estado=doc["estado"],
+            fecha_creacion=doc.get("fecha_creacion"),
+            fecha_expiracion=doc.get("fecha_expiracion")
+        ))
+
+    return InvitacionListResponse(
+        total=total,
+        skip=skip,
+        limit=limit,
+        datos=invitaciones
+    )
+
+
+@app.delete("/api/v1/invitaciones/{invitacion_id}", status_code=status.HTTP_200_OK)
+async def cancelar_invitacion(
+    invitacion_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Cancel a pending invitation.
+
+    Only the sender or superadmin can cancel an invitation.
+    """
+    invitador_email = current_user.get("sub")
+    user_role = current_user.get("rol", "")
+
+    if user_role not in ["director_tecnico", "coach", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para cancelar invitaciones"
+        )
+
+    db = DatabaseClient.get_db()
+
+    try:
+        from bson import ObjectId
+        invitacion = db["invitaciones"].find_one({"_id": ObjectId(invitacion_id)})
+    except:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitación no encontrada")
+
+    if not invitacion:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitación no encontrada")
+
+    if user_role != "superadmin" and invitacion["invitador_email"] != invitador_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo puedes cancelar tus propias invitaciones"
+        )
+
+    if invitacion["estado"] != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo puedes cancelar invitaciones pendientes"
+        )
+
+    db["invitaciones"].update_one(
+        {"_id": ObjectId(invitacion_id)},
+        {"$set": {"estado": "expirada"}}
+    )
+
+    return {"message": "Invitación cancelada"}
+
+
+@app.post("/api/v1/invitaciones/aceptar", status_code=status.HTTP_201_CREATED)
+async def aceptar_invitacion(invitacion: InvitacionAceptar):
+    """Accept an invitation and create user account.
+
+    Validates the token, creates the user with the role assigned by the inviter,
+    and marks the invitation as accepted.
+
+    The new user is auto-approved (no pending status).
+    """
+    db = DatabaseClient.get_db()
+    coleccion_invitaciones = db["invitaciones"]
+
+    from app.services.auth import decode_token
+    try:
+        payload = decode_token(invitacion.token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido o expirado"
+        )
+
+    if payload.get("type") != "invitation":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token no es una invitación válida"
+        )
+
+    invitacion_doc = coleccion_invitaciones.find_one({"token": invitacion.token})
+    if not invitacion_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invitación no encontrada"
+        )
+
+    if invitacion_doc["estado"] != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Esta invitación ya no está activa"
+        )
+
+    if invitacion_doc["fecha_expiracion"] < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Esta invitación ha expirado"
+        )
+
+    email_invitado = invitacion_doc["email_invitado"]
+    rol_asignado = invitacion_doc["rol_asignado"]
+    invitador_email = invitacion_doc["invitador_email"]
+
+    if db["usuarios"].find_one({"email": email_invitado}):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este email ya está registrado en la plataforma"
+        )
+
+    hashed_pwd = get_password_hash(invitacion.password)
+
+    usuario_db = UsuarioInDB(
+        email=email_invitado,
+        nombre_completo=invitacion.nombre_completo,
+        rol=rol_asignado,
+        nadadores_asignados=[],
+        hashed_password=hashed_pwd,
+        estado_aprobacion="aprobado",
+        aprobado_por=invitador_email,
+        fecha_aprobacion=datetime.utcnow(),
+        fecha_registro=datetime.utcnow()
+    )
+
+    db["usuarios"].insert_one(usuario_db.model_dump())
+
+    coleccion_invitaciones.update_one(
+        {"token": invitacion.token},
+        {"$set": {"estado": "aceptada"}}
+    )
+
+    return {
+        "message": "Cuenta creada correctamente. Ya puedes iniciar sesión.",
+        "email": email_invitado,
+        "rol": rol_asignado
     }
 
 
@@ -678,7 +957,7 @@ async def list_usuarios(
     Returns a paginated list of all users in the system.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden ver la lista de usuarios"
@@ -730,7 +1009,7 @@ async def list_registros_pendientes(
     Returns a paginated list of users with estado_aprobacion = 'pendiente'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden ver los registros pendientes"
@@ -776,7 +1055,7 @@ async def aprobar_usuario(
     Changes the user's estado_aprobacion from 'pendiente' to 'aprobado'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden aprobar registros"
@@ -836,7 +1115,7 @@ async def rechazar_usuario(
     Changes the user's estado_aprobacion from 'pendiente' to 'rechazado'.
     Only accessible by superadmin users.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden rechazar registros"
@@ -896,7 +1175,7 @@ async def update_usuario(
 
     Allows admin to change user roles or deactivate users.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden modificar usuarios"
@@ -941,7 +1220,7 @@ async def delete_usuario(
 
     This is a hard delete - the user will be permanently removed.
     """
-    if current_user.get("rol") not in ["admin_federacion", "superadmin"]:
+    if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo los administradores pueden eliminar usuarios"
@@ -1301,7 +1580,7 @@ async def create_control_fisiologico(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
+    if user_role not in ["superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), control.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1332,14 +1611,14 @@ async def list_controles_fisiologicos(
     query = {}
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
+    if user_role not in ["superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -1383,7 +1662,7 @@ async def create_composicion_corporal(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
+    if user_role not in ["superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), composicion.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1407,14 +1686,14 @@ async def list_composicion_corporal(
     query = {}
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
+    if user_role not in ["superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
 
@@ -1455,7 +1734,7 @@ async def create_analisis_competicion(
     user_role = current_user.get("rol", "coach")
 
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(
+    if user_role not in ["superadmin"] and not _check_swimmer_access(
         DatabaseClient.get_db(), analisis.nadador_id, coach_id, user_role
     ):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
@@ -1480,14 +1759,14 @@ async def list_analisis_competicion(
     query = {}
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not nadador_id:
+    if user_role not in ["superadmin"] and not nadador_id:
         swimmer_ids = _get_coach_swimmer_ids(db, coach_id, user_role)
         if not swimmer_ids:
             return ListaResponse(total=0, skip=skip, limit=limit, datos=[])
         query["nadador_id"] = {"$in": swimmer_ids}
     
     if nadador_id:
-        if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+        if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
             raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
         query["nadador_id"] = nadador_id
     
@@ -1546,7 +1825,7 @@ async def get_acwr_history(
     db = DatabaseClient.get_db()
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
+    if user_role not in ["superadmin"] and not _check_swimmer_access(db, nadador_id, coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     coleccion = db["registros_diarios"]
@@ -1723,7 +2002,7 @@ async def list_nadadores(
     query = {}
     
     # Access control: admin sees all, coaches see only their swimmers
-    if user_role not in ["admin_federacion", "superadmin"]:
+    if user_role not in ["superadmin"]:
         query["coach_id"] = coach_id
     
     if not include_archived:
@@ -1768,7 +2047,7 @@ async def get_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and doc.get("coach_id") != coach_id:
+    if user_role not in ["superadmin"] and doc.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     return _get_nadador_response(doc, db)
@@ -1795,7 +2074,7 @@ async def update_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and existing.get("coach_id") != coach_id:
+    if user_role not in ["superadmin"] and existing.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     update_data = _sanitize_for_mongo(nadador.model_dump(exclude_none=True))
@@ -1847,7 +2126,7 @@ async def delete_nadador(
         raise HTTPException(status_code=404, detail="Nadador no encontrado")
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and existing.get("coach_id") != coach_id:
+    if user_role not in ["superadmin"] and existing.get("coach_id") != coach_id:
         raise HTTPException(status_code=403, detail="No tienes acceso a este nadador")
 
     # Check if swimmer has historical data
@@ -2053,7 +2332,7 @@ async def delete_registro_diario(
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
     # Access control
-    if user_role not in ["admin_federacion", "superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
+    if user_role not in ["superadmin"] and not _check_swimmer_access(db, doc["nadador_id"], coach_id, user_role):
         raise HTTPException(status_code=403, detail="No tienes acceso a este registro")
 
     result = db["registros_diarios"].delete_one({"_id": obj_id})
