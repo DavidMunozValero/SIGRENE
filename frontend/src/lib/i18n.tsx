@@ -133,6 +133,10 @@ const translations: Record<Language, Record<string, string>> = {
     "register.email": "Email",
     "register.password": "Contraseña",
     "register.password_placeholder": "Mínimo 8 caracteres",
+    "register.confirm_password": "Confirmar contraseña",
+    "register.confirm_password_placeholder": "Repite la contraseña",
+    "register.passwords_mismatch": "Las contraseñas no coinciden",
+    "register.password_min": "La contraseña debe tener al menos 8 caracteres",
     "register.terms": "Acepto los",
     "register.terms_link": "términos y condiciones",
     "register.privacy_link": "política de privacidad",
@@ -178,6 +182,10 @@ const translations: Record<Language, Record<string, string>> = {
     "invite.full_name_placeholder": "Carlos Ruiz",
     "invite.create_password": "Crea una contraseña",
     "invite.password_placeholder": "Mínimo 8 caracteres",
+    "invite.confirm_password": "Confirmar contraseña",
+    "invite.confirm_password_placeholder": "Repite la contraseña",
+    "invite.passwords_mismatch": "Las contraseñas no coinciden",
+    "invite.password_min": "La contraseña debe tener al menos 8 caracteres",
     "invite.accept": "Aceptar invitación",
 
     // Terms page
@@ -707,6 +715,10 @@ const translations: Record<Language, Record<string, string>> = {
     "register.email": "Email",
     "register.password": "Password",
     "register.password_placeholder": "Minimum 8 characters",
+    "register.confirm_password": "Confirm password",
+    "register.confirm_password_placeholder": "Repeat password",
+    "register.passwords_mismatch": "Passwords do not match",
+    "register.password_min": "Password must be at least 8 characters",
     "register.terms": "I accept the",
     "register.terms_link": "terms and conditions",
     "register.privacy_link": "privacy policy",
@@ -752,6 +764,10 @@ const translations: Record<Language, Record<string, string>> = {
     "invite.full_name_placeholder": "John Smith",
     "invite.create_password": "Create a password",
     "invite.password_placeholder": "Minimum 8 characters",
+    "invite.confirm_password": "Confirm password",
+    "invite.confirm_password_placeholder": "Repeat password",
+    "invite.passwords_mismatch": "Passwords do not match",
+    "invite.password_min": "Password must be at least 8 characters",
     "invite.accept": "Accept invitation",
 
     // Terms page
