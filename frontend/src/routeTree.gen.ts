@@ -42,6 +42,7 @@ import { Route as AppAdminRegisterTrainerRouteImport } from './routes/app.admin.
 import { Route as AppAdminPreviewRouteImport } from './routes/app.admin.preview'
 import { Route as AppAdminPendingRouteImport } from './routes/app.admin.pending'
 import { Route as AppAdminInvitationsRouteImport } from './routes/app.admin.invitations'
+import { Route as AppAdminBackupsRouteImport } from './routes/app.admin.backups'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -208,6 +209,11 @@ const AppAdminInvitationsRoute = AppAdminInvitationsRouteImport.update({
   path: '/invitations',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminBackupsRoute = AppAdminBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/app/coach': typeof AppCoachRouteWithChildren
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
+  '/app/admin/backups': typeof AppAdminBackupsRoute
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
   '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/roles': typeof RolesRoute
   '/terms': typeof TermsRoute
+  '/app/admin/backups': typeof AppAdminBackupsRoute
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
   '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/app/coach': typeof AppCoachRouteWithChildren
   '/app/director': typeof AppDirectorRouteWithChildren
   '/app/swimmer': typeof AppSwimmerRouteWithChildren
+  '/app/admin/backups': typeof AppAdminBackupsRoute
   '/app/admin/invitations': typeof AppAdminInvitationsRoute
   '/app/admin/pending': typeof AppAdminPendingRoute
   '/app/admin/preview': typeof AppAdminPreviewRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/app/coach'
     | '/app/director'
     | '/app/swimmer'
+    | '/app/admin/backups'
     | '/app/admin/invitations'
     | '/app/admin/pending'
     | '/app/admin/preview'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/roles'
     | '/terms'
+    | '/app/admin/backups'
     | '/app/admin/invitations'
     | '/app/admin/pending'
     | '/app/admin/preview'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/app/coach'
     | '/app/director'
     | '/app/swimmer'
+    | '/app/admin/backups'
     | '/app/admin/invitations'
     | '/app/admin/pending'
     | '/app/admin/preview'
@@ -666,10 +678,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminInvitationsRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/backups': {
+      id: '/app/admin/backups'
+      path: '/backups'
+      fullPath: '/app/admin/backups'
+      preLoaderRoute: typeof AppAdminBackupsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
 interface AppAdminRouteChildren {
+  AppAdminBackupsRoute: typeof AppAdminBackupsRoute
   AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
   AppAdminPendingRoute: typeof AppAdminPendingRoute
   AppAdminPreviewRoute: typeof AppAdminPreviewRoute
@@ -680,6 +700,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminBackupsRoute: AppAdminBackupsRoute,
   AppAdminInvitationsRoute: AppAdminInvitationsRoute,
   AppAdminPendingRoute: AppAdminPendingRoute,
   AppAdminPreviewRoute: AppAdminPreviewRoute,

@@ -182,6 +182,37 @@ class ApiClient {
     });
   }
 
+  // Backups (Admin)
+  async getBackups() {
+    return this.request<{ total: number; backups: any[] }>("/admin/backups");
+  }
+
+  async createBackup() {
+    return this.request<{ message: string; filename: string; size: number; size_formatted: string }>("/admin/backups", {
+      method: "POST",
+    });
+  }
+
+  async downloadBackup(filename: string): Promise<Blob> {
+    const url = `${API_BASE_URL}/admin/backups/${encodeURIComponent(filename)}`;
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.detail || "Error descargando backup");
+    }
+    return response.blob();
+  }
+
+  async restoreBackup(filename: string) {
+    return this.request<{ message: string; backup: string }>(`/admin/backups/restore/${encodeURIComponent(filename)}`, {
+      method: "POST",
+    });
+  }
+
   // Users (Admin)
   async getUsuarios(params: {
     skip?: number;
