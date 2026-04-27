@@ -3,6 +3,44 @@
 from typing import Optional
 from app.services.email.base import EmailMessage
 
+LOGO_SVG = """<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/>
+  <path d="M2 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/>
+  <path d="M2 7c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" opacity="0.6"/>
+</svg>"""
+
+BASE_STYLES = """* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; }
+"""
+
+EMAIL_CONTAINER = """width: 100%; max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);"""
+
+HEADER = """background: linear-gradient(135deg, #004d98 0%, #0077cc 100%); padding: 40px 32px; text-align: center;"""
+
+CONTENT = """padding: 40px 32px;"""
+
+BUTTON_PRIMARY = """display: inline-block; background: linear-gradient(135deg, #004d98 0%, #0077cc 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 600; font-size: 16px; margin: 8px 0;"""
+
+BUTTON_SECONDARY = """display: inline-block; background: #f1f5f9; color: #334155; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: 500; font-size: 14px;"""
+
+FOOTER = """padding: 24px 32px; background: #f8fafc; text-align: center; border-top: 1px solid #e2e8f0;"""
+
+def _build_email(html_body: str, preheader: str = "") -> str:
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGRENE</title>
+    {f'<meta name="description" content="{preheader}">' if preheader else ''}
+</head>
+<body style="{BASE_STYLES}">
+    <table width="100%" cellpadding="0" cellspacing="0" style="{EMAIL_CONTAINER}">
+        {html_body}
+    </table>
+</body>
+</html>"""
+
 
 def contact_form_notification(
     name: str,
@@ -12,42 +50,56 @@ def contact_form_notification(
     admin_email: str = "admin@sigrene.es",
 ) -> EmailMessage:
     """Template for contact form submissions."""
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>Nuevo mensaje de contacto</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Nombre:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{name}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Email:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><a href="mailto:{email}">{email}</a></td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Asunto:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{subject}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Mensaje:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{message}</td>
-                </tr>
-            </table>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este mensaje fue enviado a través del formulario de contacto de SIGRENE.</p>
-        </div>
-    </body>
-    </html>
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Nuevo mensaje de contacto</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">SIGRENE — Plataforma de Gestión</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Nombre</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px;">{name}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Email</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px;"><a href="mailto:{email}" style="color: #004d98;">{email}</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Asunto</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px;">{subject}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Mensaje</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px; line-height: 1.6;">{message}</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este mensaje fue enviado a través del formulario de contacto de SIGRENE.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[admin_email],
         subject=f"[SIGRENE] Contacto: {subject}",
-        html_body=html,
+        html_body=_build_email(html_body, f"Nuevo mensaje de contacto de {name}"),
         text_body=f"Nombre: {name}\nEmail: {email}\nAsunto: {subject}\nMensaje: {message}",
     )
 
@@ -60,45 +112,56 @@ def new_registration_notification(
 ) -> EmailMessage:
     """Template for new user registration notifications to admins."""
     role_display = {
+        "director_tecnico": "Director Técnico",
         "coach": "Entrenador",
         "swimmer": "Nadador",
-        "admin_federacion": "Administrador de Federación",
     }.get(user_role, user_role)
 
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>Nuevo registro pendiente de aprobación</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Se ha registrado un nuevo usuario en SIGRENE:</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Nombre:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{user_name}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Email:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><a href="mailto:{user_email}">{user_email}</a></td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Rol:</strong></td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">{role_display}</td>
-                </tr>
-            </table>
-            <p style="margin-top: 20px;">Este usuario está pendiente de aprobación antes de poder acceder a la plataforma.</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Accede al panel de administración para aprobar o rechazar este registro.</p>
-        </div>
-    </body>
-    </html>
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Nuevo registro pendiente</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Un nuevo usuario solicita acceso</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Nombre</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px;">{user_name}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Email</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px;"><a href="mailto:{user_email}" style="color: #004d98;">{user_email}</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Rol solicitado</span>
+                            <p style="color: #1e293b; font-size: 16px; margin-top: 4px; font-weight: 600;">{role_display}</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">Este usuario está pendiente de aprobación. Accede al panel de administración para revisar su solicitud.</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Notificación automática de SIGRENE</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[admin_email],
         subject=f"[SIGRENE] Nuevo registro pendiente: {user_name}",
-        html_body=html,
+        html_body=_build_email(html_body, f"Nuevo usuario registrado: {user_name}"),
         text_body=f"Nuevo registro:\nNombre: {user_name}\nEmail: {user_email}\nRol: {role_display}",
     )
 
@@ -109,33 +172,35 @@ def password_recovery_email(
     expires_minutes: int = 30,
 ) -> EmailMessage:
     """Template for password recovery emails."""
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>Recuperación de contraseña</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Has solicitado restablecer tu contraseña en SIGRENE.</p>
-            <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{reset_url}" style="background: #004d98; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                    Restablecer contraseña
-                </a>
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Restablecer contraseña</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Solicitud de recuperación</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hola,</p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Has solicitado restablecer tu contraseña en SIGRENE. Haz clic en el siguiente botón para crear una nueva:</p>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{reset_url}" style="{BUTTON_PRIMARY}">Restablecer contraseña</a>
             </div>
-            <p style="color: #666; font-size: 14px;">Este enlace expira en {expires_minutes} minutos.</p>
-            <p style="color: #666; font-size: 14px;">Si no solicitaste este cambio, puedes ignorar este email.</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
-        </div>
-    </body>
-    </html>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">Este enlace expira en <strong>{expires_minutes} minutos</strong>.</p>
+            <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 16px;">Si no solicitaste este cambio, puedes ignorar este email. Tu contraseña actual seguirá siendo válida.</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[email],
         subject="[SIGRENE] Restablecer contraseña",
-        html_body=html,
+        html_body=_build_email(html_body, "Solicitud de restablecimiento de contraseña"),
         text_body=f"Recupera tu contraseña en: {reset_url}\nEste enlace expira en {expires_minutes} minutos.",
     )
 
@@ -146,31 +211,34 @@ def account_approved_email(
     login_url: str = "https://sigrene.vercel.app/login",
 ) -> EmailMessage:
     """Template for account approval notification."""
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>¡Cuenta aprobada!</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Hola {name},</p>
-            <p>Tu cuenta en SIGRENE ha sido aprobada. Ya puedes acceder a la plataforma:</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{login_url}" style="background: #004d98; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                    Acceder a SIGRENE
-                </a>
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">¡Cuenta aprobada!</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Ya puedes acceder a la plataforma</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hola <strong>{name}</strong>,</p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Tu cuenta en SIGRENE ha sido aprobada. Ya puedes acceder a la plataforma y comenzar a usarla:</p>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{login_url}" style="{BUTTON_PRIMARY}">Acceder a SIGRENE</a>
             </div>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
-        </div>
-    </body>
-    </html>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">Bienvenido/a a la plataforma.</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[email],
         subject="[SIGRENE] Tu cuenta ha sido aprobada",
-        html_body=html,
+        html_body=_build_email(html_body, "Tu cuenta ha sido aprobada - Ya puedes acceder"),
         text_body=f"Hola {name}, tu cuenta ha sido aprobada. Accede a: {login_url}",
     )
 
@@ -182,32 +250,39 @@ def registration_pending_email(
 ) -> EmailMessage:
     """Template for pending registration notification to the user."""
     role_display = {
+        "director_tecnico": "Director Técnico",
         "coach": "Entrenador",
         "swimmer": "Nadador",
-        "admin_federacion": "Administrador de Federación",
     }.get(user_role, user_role)
 
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>Solicitud de registro recibida</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Hola {name},</p>
-            <p>Hemos recibido tu solicitud de registro en SIGRENE con el rol de <strong>{role_display}</strong>.</p>
-            <p>Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por email cuando sea procesada.</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
-        </div>
-    </body>
-    </html>
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Solicitud recibida</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Tu registro está en revisión</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hola <strong>{name}</strong>,</p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hemos recibido tu solicitud de registro en SIGRENE con el rol de <strong>{role_display}</strong>.</p>
+            <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin: 24px 0;">
+                <p style="color: #92400e; font-size: 14px; line-height: 1.6;">Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por email cuando sea procesada.</p>
+            </div>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">Gracias por tu paciencia.</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[email],
         subject="[SIGRENE] Solicitud de registro recibida",
-        html_body=html,
+        html_body=_build_email(html_body, "Hemos recibido tu solicitud - Pendiente de aprobación"),
         text_body=f"Hola {name},\nHemos recibido tu solicitud de registro. Tu cuenta está pendiente de aprobación.",
     )
 
@@ -217,27 +292,31 @@ def account_rejected_email(
     name: str,
 ) -> EmailMessage:
     """Template for account rejection notification."""
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #c81e1e; color: white; padding: 20px; text-align: center;">
-            <h1>Solicitud de registro rechazada</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Hola {name},</p>
-            <p>Lamentamos informarte que tu solicitud de registro en SIGRENE ha sido rechazada.</p>
-            <p>Si crees que esto es un error, contacta con un administrador para más información.</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
-        </div>
-    </body>
-    </html>
+    html_body = f"""
+    <tr>
+        <td style="background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); padding: 40px 32px; text-align: center;">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Solicitud rechazada</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Registro no aprobado</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hola <strong>{name}</strong>,</p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Lamentamos informarte que tu solicitud de registro en SIGRENE ha sido rechazada.</p>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">Si crees que esto es un error, contacta con un administrador de la plataforma para más información.</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[email],
         subject="[SIGRENE] Solicitud de registro rechazada",
-        html_body=html,
+        html_body=_build_email(html_body, "Tu solicitud de registro ha sido rechazada"),
         text_body=f"Hola {name}, lamentamos informarte que tu solicitud ha sido rechazada.",
     )
 
@@ -257,33 +336,59 @@ def invitation_email(
         "swimmer": "Nadador",
     }.get(role_assigned, role_assigned)
 
-    html = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
-            <h1>Invitación a SIGRENE</h1>
-        </div>
-        <div style="padding: 20px; background: #f9f9f9;">
-            <p>Hola {name},</p>
-            <p>Has sido invitado/a a unirte a SIGRENE como <strong>{role_display}</strong> por <strong>{inviting_organization}</strong>.</p>
-            <p>Para aceptar la invitación y crear tu cuenta, haz clic en el siguiente enlace:</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{invitation_url}" style="background: #004d98; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                    Aceptar invitación
-                </a>
+    role_badge = {
+        "director_tecnico": "#7c3aed",
+        "coach": "#0891b2",
+        "swimmer": "#059669",
+    }.get(role_assigned, "#64748b")
+
+    html_body = f"""
+    <tr>
+        <td style="{HEADER}">
+            {LOGO_SVG}
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-top: 16px;">Invitación a SIGRENE</h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 8px;">Un nuevo reto te espera</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{CONTENT}">
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                Hola <strong>{name}</strong>,
+            </p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                Has sido invitado/a a unirte a <strong>SIGRENE</strong> como:
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+                <span style="display: inline-block; background: {role_badge}; color: #ffffff; padding: 12px 24px; border-radius: 100px; font-size: 18px; font-weight: 600;">
+                    {role_display}
+                </span>
             </div>
-            <p style="color: #666; font-size: 14px;">Este enlace expira en {expires_days} días.</p>
-            <p style="color: #666; font-size: 14px;">Si no solicitaste esta invitación, puedes ignorar este email.</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
-        </div>
-    </body>
-    </html>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                por <strong>{inviting_organization}</strong>
+            </p>
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+                Completa tu registro para crear tu cuenta personal:
+            </p>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{invitation_url}" style="{BUTTON_PRIMARY}">Aceptar invitación</a>
+            </div>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6;">
+                Este enlace expira en <strong>{expires_days} días</strong>.
+            </p>
+            <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                Si no solicitaste esta invitación, puedes ignorar este email.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td style="{FOOTER}">
+            <p style="color: #64748b; font-size: 13px;">Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </td>
+    </tr>
     """
     return EmailMessage(
         to=[email],
         subject=f"[SIGRENE] Invitación como {role_display}",
-        html_body=html,
+        html_body=_build_email(html_body, f"Has sido invitado como {role_display} a SIGRENE"),
         text_body=f"Hola {name}, has sido invitado a SIGRENE como {role_display}. Acepta tu invitación en: {invitation_url}\nEste enlace expira en {expires_days} días.",
     )
