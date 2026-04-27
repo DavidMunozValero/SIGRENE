@@ -4,6 +4,7 @@ import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export type Role = "superadmin" | "admin_federacion" | "director_tecnico" | "coach" | "swimmer";
 
@@ -208,6 +209,9 @@ export function AppShell({ role }: { role: Role }) {
                       </svg>
                       {t("app.settings")}
                     </Link>
+                    <div className="px-4 py-2">
+                      <LanguageSwitcher />
+                    </div>
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
