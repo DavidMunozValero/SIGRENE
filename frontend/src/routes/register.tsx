@@ -35,6 +35,17 @@ function RegisterPage() {
     const nombreCompleto = formData.get("name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (password !== confirmPassword) {
+      setError(t("register.passwords_mismatch"));
+      return;
+    }
+
+    if (password.length < 8) {
+      setError(t("register.password_min"));
+      return;
+    }
 
     try {
       const response = await api.register({
@@ -114,7 +125,11 @@ function RegisterPage() {
           </div>
           <div className="space-y-1.5 mt-3">
             <Label htmlFor="password">{t("register.password")}</Label>
-            <Input id="password" name="password" type="password" placeholder={t("register.password_placeholder")} required />
+            <Input id="password" name="password" type="password" placeholder={t("register.password_placeholder")} required minLength={8} />
+          </div>
+          <div className="space-y-1.5 mt-3">
+            <Label htmlFor="confirmPassword">{t("register.confirm_password")}</Label>
+            <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t("register.confirm_password_placeholder")} required minLength={8} />
           </div>
         </div>
 
