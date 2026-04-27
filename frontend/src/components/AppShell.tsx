@@ -74,6 +74,7 @@ export function AppShell({ role }: { role: Role }) {
   const NAV_ADMIN = [
     { label: t("app.summary"), to: "/app/admin" },
     { label: t("app.users"), to: "/app/admin/users" },
+    { label: t("app.invitations"), to: "/app/admin/invitations" },
     { label: t("app.pending"), to: "/app/admin/pending" },
     { label: t("app.register_user"), to: "/app/admin/register-trainer" },
     { label: t("app.preview"), to: "/app/admin/preview" },
@@ -83,12 +84,14 @@ export function AppShell({ role }: { role: Role }) {
     { label: t("app.dashboard"), to: "/app/director" },
     { label: t("app.groups"), to: "/app/director/groups" },
     { label: t("app.reports"), to: "/app/director/reports" },
+    { label: t("app.invitations"), to: "/app/director/invitations" },
   ];
 
   const NAV_COACH = [
     { label: t("app.my_group"), to: "/app/coach" },
     { label: t("app.swimmers"), to: "/app/coach/swimmers" },
     { label: t("app.wellness"), to: "/app/coach/wellness" },
+    { label: t("app.invitations"), to: "/app/coach/invitations" },
   ];
 
   const NAV_SWIMMER = [
@@ -98,7 +101,7 @@ export function AppShell({ role }: { role: Role }) {
   ];
 
   const getNavForRole = (r: string) => {
-    if (r === "superadmin" || r === "admin_federacion") return NAV_ADMIN;
+    if (r === "superadmin") return NAV_ADMIN;
     if (r === "director_tecnico") return NAV_DIRECTOR;
     if (r === "coach") return NAV_COACH;
     return NAV_SWIMMER;
@@ -107,7 +110,6 @@ export function AppShell({ role }: { role: Role }) {
   const getRoleLabel = (r: string) => {
     const labels: Record<string, string> = {
       superadmin: t("app.superadmin"),
-      admin_federacion: t("app.admin_federacion"),
       director_tecnico: t("app.director_tecnico"),
       coach: t("app.coach"),
       swimmer: t("app.swimmer"),

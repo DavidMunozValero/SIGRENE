@@ -31,9 +31,11 @@ import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
 import { Route as AppSwimmerProfileRouteImport } from './routes/app.swimmer.profile'
 import { Route as AppSwimmerHistoryRouteImport } from './routes/app.swimmer.history'
 import { Route as AppDirectorReportsRouteImport } from './routes/app.director.reports'
+import { Route as AppDirectorInvitationsRouteImport } from './routes/app.director.invitations'
 import { Route as AppDirectorGroupsRouteImport } from './routes/app.director.groups'
 import { Route as AppCoachWellnessRouteImport } from './routes/app.coach.wellness'
 import { Route as AppCoachSwimmersRouteImport } from './routes/app.coach.swimmers'
+import { Route as AppCoachInvitationsRouteImport } from './routes/app.coach.invitations'
 import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
 import { Route as AppAdminSettingsRouteImport } from './routes/app.admin.settings'
 import { Route as AppAdminRegisterTrainerRouteImport } from './routes/app.admin.register-trainer'
@@ -151,6 +153,11 @@ const AppDirectorReportsRoute = AppDirectorReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AppDirectorRoute,
 } as any)
+const AppDirectorInvitationsRoute = AppDirectorInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => AppDirectorRoute,
+} as any)
 const AppDirectorGroupsRoute = AppDirectorGroupsRouteImport.update({
   id: '/groups',
   path: '/groups',
@@ -164,6 +171,11 @@ const AppCoachWellnessRoute = AppCoachWellnessRouteImport.update({
 const AppCoachSwimmersRoute = AppCoachSwimmersRouteImport.update({
   id: '/swimmers',
   path: '/swimmers',
+  getParentRoute: () => AppCoachRoute,
+} as any)
+const AppCoachInvitationsRoute = AppCoachInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
   getParentRoute: () => AppCoachRoute,
 } as any)
 const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
@@ -219,9 +231,11 @@ export interface FileRoutesByFullPath {
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
   '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/coach/invitations': typeof AppCoachInvitationsRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
+  '/app/director/invitations': typeof AppDirectorInvitationsRoute
   '/app/director/reports': typeof AppDirectorReportsRoute
   '/app/swimmer/history': typeof AppSwimmerHistoryRoute
   '/app/swimmer/profile': typeof AppSwimmerProfileRoute
@@ -248,9 +262,11 @@ export interface FileRoutesByTo {
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
   '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/coach/invitations': typeof AppCoachInvitationsRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
+  '/app/director/invitations': typeof AppDirectorInvitationsRoute
   '/app/director/reports': typeof AppDirectorReportsRoute
   '/app/swimmer/history': typeof AppSwimmerHistoryRoute
   '/app/swimmer/profile': typeof AppSwimmerProfileRoute
@@ -282,9 +298,11 @@ export interface FileRoutesById {
   '/app/admin/register-trainer': typeof AppAdminRegisterTrainerRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
   '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/coach/invitations': typeof AppCoachInvitationsRoute
   '/app/coach/swimmers': typeof AppCoachSwimmersRoute
   '/app/coach/wellness': typeof AppCoachWellnessRoute
   '/app/director/groups': typeof AppDirectorGroupsRoute
+  '/app/director/invitations': typeof AppDirectorInvitationsRoute
   '/app/director/reports': typeof AppDirectorReportsRoute
   '/app/swimmer/history': typeof AppSwimmerHistoryRoute
   '/app/swimmer/profile': typeof AppSwimmerProfileRoute
@@ -317,9 +335,11 @@ export interface FileRouteTypes {
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
     | '/app/admin/users'
+    | '/app/coach/invitations'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
+    | '/app/director/invitations'
     | '/app/director/reports'
     | '/app/swimmer/history'
     | '/app/swimmer/profile'
@@ -346,9 +366,11 @@ export interface FileRouteTypes {
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
     | '/app/admin/users'
+    | '/app/coach/invitations'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
+    | '/app/director/invitations'
     | '/app/director/reports'
     | '/app/swimmer/history'
     | '/app/swimmer/profile'
@@ -379,9 +401,11 @@ export interface FileRouteTypes {
     | '/app/admin/register-trainer'
     | '/app/admin/settings'
     | '/app/admin/users'
+    | '/app/coach/invitations'
     | '/app/coach/swimmers'
     | '/app/coach/wellness'
     | '/app/director/groups'
+    | '/app/director/invitations'
     | '/app/director/reports'
     | '/app/swimmer/history'
     | '/app/swimmer/profile'
@@ -565,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDirectorReportsRouteImport
       parentRoute: typeof AppDirectorRoute
     }
+    '/app/director/invitations': {
+      id: '/app/director/invitations'
+      path: '/invitations'
+      fullPath: '/app/director/invitations'
+      preLoaderRoute: typeof AppDirectorInvitationsRouteImport
+      parentRoute: typeof AppDirectorRoute
+    }
     '/app/director/groups': {
       id: '/app/director/groups'
       path: '/groups'
@@ -584,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/swimmers'
       fullPath: '/app/coach/swimmers'
       preLoaderRoute: typeof AppCoachSwimmersRouteImport
+      parentRoute: typeof AppCoachRoute
+    }
+    '/app/coach/invitations': {
+      id: '/app/coach/invitations'
+      path: '/invitations'
+      fullPath: '/app/coach/invitations'
+      preLoaderRoute: typeof AppCoachInvitationsRouteImport
       parentRoute: typeof AppCoachRoute
     }
     '/app/admin/users': {
@@ -656,12 +694,14 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 )
 
 interface AppCoachRouteChildren {
+  AppCoachInvitationsRoute: typeof AppCoachInvitationsRoute
   AppCoachSwimmersRoute: typeof AppCoachSwimmersRoute
   AppCoachWellnessRoute: typeof AppCoachWellnessRoute
   AppCoachIndexRoute: typeof AppCoachIndexRoute
 }
 
 const AppCoachRouteChildren: AppCoachRouteChildren = {
+  AppCoachInvitationsRoute: AppCoachInvitationsRoute,
   AppCoachSwimmersRoute: AppCoachSwimmersRoute,
   AppCoachWellnessRoute: AppCoachWellnessRoute,
   AppCoachIndexRoute: AppCoachIndexRoute,
@@ -673,12 +713,14 @@ const AppCoachRouteWithChildren = AppCoachRoute._addFileChildren(
 
 interface AppDirectorRouteChildren {
   AppDirectorGroupsRoute: typeof AppDirectorGroupsRoute
+  AppDirectorInvitationsRoute: typeof AppDirectorInvitationsRoute
   AppDirectorReportsRoute: typeof AppDirectorReportsRoute
   AppDirectorIndexRoute: typeof AppDirectorIndexRoute
 }
 
 const AppDirectorRouteChildren: AppDirectorRouteChildren = {
   AppDirectorGroupsRoute: AppDirectorGroupsRoute,
+  AppDirectorInvitationsRoute: AppDirectorInvitationsRoute,
   AppDirectorReportsRoute: AppDirectorReportsRoute,
   AppDirectorIndexRoute: AppDirectorIndexRoute,
 }

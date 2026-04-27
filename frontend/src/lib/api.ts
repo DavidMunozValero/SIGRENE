@@ -59,11 +59,7 @@ class ApiClient {
     switch (rol) {
       case "superadmin":
         return "/app/admin";
-      case "admin_federacion":
-        return "/app/admin";
       case "director_tecnico":
-        return "/app/director";
-      case "director":
         return "/app/director";
       case "coach":
         return "/app/coach";
@@ -149,6 +145,40 @@ class ApiClient {
     return this.request("/usuarios/reset-password", {
       method: "POST",
       body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  }
+
+  // Invitations
+  async crearInvitacion(data: { email_invitado: string; rol_asignado: string }) {
+    return this.request<{ message: string; token: string }>("/invitaciones/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getInvitaciones(params: { skip?: number; limit?: number } = {}) {
+    const query = new URLSearchParams();
+    if (params.skip) query.append("skip", String(params.skip));
+    if (params.limit) query.append("limit", String(params.limit));
+    const queryStr = query.toString();
+    return this.request<{
+      total: number;
+      skip: number;
+      limit: number;
+      datos: any[];
+    }>(`/invitaciones/${queryStr ? `?${queryStr}` : ""}`);
+  }
+
+  async cancelarInvitacion(invitacionId: string) {
+    return this.request<{ message: string }>(`/invitaciones/${invitacionId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async aceptarInvitacion(data: { token: string; nombre_completo: string; password: string }) {
+    return this.request<{ message: string; email: string; rol: string }>("/invitaciones/aceptar", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 

@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/admin/register-trainer")({
-  head: () => ({ meta: [{ title: "Registrar Usuario — Admin" }] }),
+  head: () => ({ meta: [{ title: "Registrar Usuario — Superadmin" }] }),
   component: RegisterTrainerPageWithI18n,
 });
 
@@ -38,11 +38,9 @@ function RegisterTrainerPage({ t }: { t: (key: string) => string }) {
   });
 
   const ROLES: ROLES[] = [
-    { value: "superadmin", label: "Superadmin", description: t("admin.register.full_access") },
-    { value: "admin_federacion", label: "Admin Federación", description: t("admin.register.federation_admin") },
-    { value: "director_tecnico", label: "Director Técnico", description: t("admin.register.dashboard") },
-    { value: "coach", label: "Entrenador", description: t("admin.register.coach_management") },
-    { value: "swimmer", label: t("admin.preview.swimmer_label"), description: t("admin.register.swimmer_panel") },
+    { value: "superadmin", label: t("app.superadmin"), description: t("admin.register.full_access") },
+    { value: "director_tecnico", label: t("app.director_tecnico"), description: t("admin.register.director_tech_desc") },
+    { value: "coach", label: t("app.coach"), description: t("admin.register.coach_management") },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

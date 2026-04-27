@@ -42,7 +42,6 @@ function PreviewPage({ t }: { t: (key: string) => string }) {
 
   const usuariosByRol = {
     superadmin: usuarios.filter(u => u.rol === "superadmin"),
-    admin_federacion: usuarios.filter(u => u.rol === "admin_federacion"),
     director_tecnico: usuarios.filter(u => u.rol === "director_tecnico"),
     coach: usuarios.filter(u => u.rol === "coach"),
     swimmer: usuarios.filter(u => u.rol === "swimmer"),
@@ -53,33 +52,26 @@ function PreviewPage({ t }: { t: (key: string) => string }) {
       rol: "superadmin",
       label: "Superadmin",
       description: t("admin.register.full_access"),
-      routes: ["/app/admin", "/app/admin/users", "/app/admin/settings", "/app/admin/pending"],
+      routes: ["/app/admin", "/app/admin/users", "/app/admin/invitations", "/app/admin/pending"],
       color: "bg-red-500/15 text-red-400 border-red-500/30",
     },
     {
-      rol: "admin_federacion",
-      label: "Admin Federación",
-      description: t("admin.register.federation_admin"),
-      routes: ["/app/admin", "/app/admin/users", "/app/admin/settings"],
-      color: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-    },
-    {
       rol: "director_tecnico",
-      label: "Director Técnico",
+      label: t("app.director_tecnico"),
       description: t("admin.register.dashboard"),
-      routes: ["/app/director", "/app/director/groups", "/app/director/reports"],
+      routes: ["/app/director", "/app/director/groups", "/app/director/reports", "/app/director/invitations"],
       color: "bg-blue-500/15 text-blue-400 border-blue-500/30",
     },
     {
       rol: "coach",
-      label: "Entrenador",
+      label: t("app.coach"),
       description: t("admin.register.coach_management"),
-      routes: ["/app/coach", "/app/coach/swimmers", "/app/coach/wellness"],
+      routes: ["/app/coach", "/app/coach/swimmers", "/app/coach/wellness", "/app/coach/invitations"],
       color: "bg-aqua/15 text-primary border-aqua/30",
     },
     {
       rol: "swimmer",
-      label: t("admin.preview.swimmer_label"),
+      label: t("app.swimmer"),
       description: t("admin.register.swimmer_panel"),
       routes: ["/app/swimmer", "/app/swimmer/history", "/app/swimmer/profile"],
       color: "bg-green-500/15 text-green-400 border-green-500/30",
@@ -134,7 +126,7 @@ function PreviewPage({ t }: { t: (key: string) => string }) {
 
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                      {t("admin.preview.users_test")} {info.rol === "superadmin" || info.rol === "admin_federacion" ? "" : t("admin.preview.users_test_desc")}
+                      {t("admin.preview.users_test")} {info.rol === "superadmin" ? "" : t("admin.preview.users_test_desc")}
                     </p>
                     {isLoading ? (
                       <p className="text-sm text-muted-foreground">{t("admin.preview.loading")}</p>
