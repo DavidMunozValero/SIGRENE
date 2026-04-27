@@ -77,6 +77,7 @@ export function AppShell({ role }: { role: Role }) {
     { label: t("app.invitations"), to: "/app/admin/invitations" },
     { label: t("app.pending"), to: "/app/admin/pending" },
     { label: t("app.register_user"), to: "/app/admin/register-trainer" },
+    { label: t("app.backups"), to: "/app/admin/backups" },
     { label: t("app.preview"), to: "/app/admin/preview" },
   ];
 
