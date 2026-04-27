@@ -676,15 +676,15 @@ async def registro_publico(usuario: UsuarioCreate):
         rol=usuario.rol,
         nadadores_asignados=usuario.nadadores_asignados or [],
         hashed_password=hashed_pwd,
-        estado_aprobacion="aprobado",
+        estado_aprobacion="pendiente",
         fecha_registro=datetime.utcnow()
     )
 
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
     return {
-        "message": f"El usuario {email_normalized} ha sido creado y aprobado correctamente.",
-        "estado_aprobacion": "aprobado"
+        "message": f"El usuario {email_normalized} ha sido creado y está pendiente de aprobación.",
+        "estado_aprobacion": "pendiente"
     }
 
 
