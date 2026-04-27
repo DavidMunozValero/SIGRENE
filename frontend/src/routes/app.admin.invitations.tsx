@@ -32,7 +32,7 @@ function InvitationsPage({ t }: { t: (key: string) => string }) {
   const [invitaciones, setInvitaciones] = useState<Invitacion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const [formData, setFormData] = useState({ email: "", rol: "director_tecnico" });
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -67,7 +67,7 @@ function InvitationsPage({ t }: { t: (key: string) => string }) {
       });
       setSuccess(t("admin.invitations.send_success"));
       setFormData({ email: "", rol: "director_tecnico" });
-      setShowForm(false);
+      setShowInviteForm(false);
       loadInvitaciones();
     } catch (err: any) {
       setInvError(err.message);
@@ -107,6 +107,7 @@ function InvitationsPage({ t }: { t: (key: string) => string }) {
   };
 
   const rolLabels: Record<string, string> = {
+    superadmin: t("app.superadmin"),
     director_tecnico: t("app.director_tecnico"),
     coach: t("app.coach"),
     swimmer: t("app.swimmer"),
@@ -126,6 +127,7 @@ function InvitationsPage({ t }: { t: (key: string) => string }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          {/* Direct Registration */}
           <SectionCard title={t("admin.invitations.register")} description={t("admin.invitations.register_desc")}>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">{t("admin.invitations.register_desc2")}</p>
@@ -135,51 +137,67 @@ function InvitationsPage({ t }: { t: (key: string) => string }) {
             </div>
           </SectionCard>
 
+          {/* Invitation */}
           <SectionCard title={t("admin.invitations.send")} description={t("admin.invitations.send_desc")}>
-            <form onSubmit={handleSendInvitation} className="space-y-4">
-              {invError && (
-                <div className="rounded-lg bg-destructive/10 text-destructive p-3 text-sm">{invError}</div>
-              )}
-              {success && (
-                <div className="rounded-lg bg-green-500/10 text-green-400 p-3 text-sm">{success}</div>
-              )}
-              <div className="space-y-1.5">
-                <Label htmlFor="email">{t("admin.invitations.email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="director@federacion.es"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Rol</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["director_tecnico", "coach", "swimmer"].map((rol) => (
-                    <button
-                      key={rol}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, rol })}
-                      className={`rounded-lg border px-3 py-2 text-sm text-left transition-colors ${
-                        formData.rol === rol
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border bg-background hover:border-primary/40 text-foreground"
-                      }`}
-                    >
-                      {rolLabels[rol]}
-                    </button>
-                  ))}
+            {showInviteForm ? (
+              <form onSubmit={handleSendInvitation} className="space-y-4">
+                {invError && (
+                  <div className="rounded-lg bg-destructive/10 text-destructive p-3 text-sm">{invError}</div>
+                )}
+                {success && (
+                  <div className="rounded-lg bg-green-500/10 text-green-400 p-3 text-sm">{success}</div>
+                )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">{t("admin.invitations.email")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="usuario@ejemplo.es"
+                    required
+                  />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Rol</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["director_tecnico", "coach", "swimmer"].map((rol) => (
+                      <button
+                        key={rol}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, rol })}
+                        className={`rounded-lg border px-3 py-2 text-sm text-left transition-colors ${
+                          formData.rol === rol
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border bg-background hover:border-primary/40 text-foreground"
+                        }`}
+                      >
+                        {rolLabels[rol]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" variant="hero" className="flex-1" disabled={sending}>
+                    {sending ? t("admin.invitations.sending") : t("admin.invitations.send")}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>
+                    {t("admin.invitations.cancel")}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">{t("admin.invitations.invite_desc")}</p>
+                <Button variant="outline" onClick={() => setShowInviteForm(true)}>
+                  + {t("admin.invitations.send_invitation")}
+                </Button>
               </div>
-              <Button type="submit" variant="hero" className="w-full" disabled={sending}>
-                {sending ? t("admin.invitations.sending") : t("admin.invitations.send")}
-              </Button>
-            </form>
+            )}
           </SectionCard>
         </div>
 
+        {/* Invitations List */}
         <SectionCard title={t("admin.invitations.all")}>
           {isLoading ? (
             <div className="h-64 rounded-xl bg-muted animate-pulse" />

@@ -59,7 +59,7 @@ function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      await api.resetPassword(token, newPassword);
+      await api.resetPassword(token, newPassword, confirmPassword);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || "Error al restablecer la contraseña");

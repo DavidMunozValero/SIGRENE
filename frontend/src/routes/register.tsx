@@ -52,7 +52,7 @@ function RegisterPage() {
         email,
         password,
         nombre_completo: nombreCompleto,
-        rol: "admin_federacion",
+        rol: "director_tecnico",
         nadadores_asignados: [],
       }) as { message: string; estado_aprobacion?: string };
 

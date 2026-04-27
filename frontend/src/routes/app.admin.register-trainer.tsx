@@ -41,6 +41,7 @@ function RegisterTrainerPage({ t }: { t: (key: string) => string }) {
     { value: "superadmin", label: t("app.superadmin"), description: t("admin.register.full_access") },
     { value: "director_tecnico", label: t("app.director_tecnico"), description: t("admin.register.director_tech_desc") },
     { value: "coach", label: t("app.coach"), description: t("admin.register.coach_management") },
+    { value: "swimmer", label: t("app.swimmer"), description: t("admin.register.swimmer_panel") },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

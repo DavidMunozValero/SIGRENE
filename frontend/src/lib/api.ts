@@ -128,7 +128,7 @@ class ApiClient {
     rol: string;
     nadadores_asignados?: string[];
   }) {
-    return this.request("/usuarios/registrar", {
+    return this.request("/usuarios/registro-publico", {
       method: "POST",
       body: JSON.stringify(userData),
     });
@@ -141,10 +141,10 @@ class ApiClient {
     });
   }
 
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(token: string, newPassword: string, confirmPassword: string) {
     return this.request("/usuarios/reset-password", {
       method: "POST",
-      body: JSON.stringify({ token, new_password: newPassword }),
+      body: JSON.stringify({ token, new_password: newPassword, confirm_password: confirmPassword }),
     });
   }
 
