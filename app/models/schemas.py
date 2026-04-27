@@ -22,7 +22,6 @@ class EstiloEnum(str, Enum):
 
 class RolUsuarioEnum(str, Enum):
     SUPERADMIN = "superadmin"
-    ADMIN_FEDERACION = "admin_federacion"
     DIRECTOR_TECNICO = "director_tecnico"
     COACH = "coach"
     SWIMMER = "swimmer"
@@ -431,3 +430,32 @@ class UpdateResponse(BaseModel):
 class DeleteResponse(BaseModel):
     message: str = Field(..., description='Mensaje de confirmación')
     deleted_count: int = Field(..., description='Número de documentos eliminados')
+
+
+class InvitacionCreate(BaseModel):
+    email_invitado: EmailStr = Field(..., description='Email del usuario a invitar')
+    rol_asignado: str = Field(..., description='Rol que se asignará al aceptar la invitación')
+
+
+class InvitacionResponse(BaseModel):
+    id: str = Field(..., description='ID de la invitación')
+    email_invitado: str = Field(..., description='Email del invitado')
+    rol_asignado: str = Field(..., description='Rol asignado')
+    token: str = Field(..., description='Token único de la invitación')
+    invitador_email: str = Field(..., description='Email de quien invita')
+    estado: str = Field(..., description='Estado: pendiente, aceptada, expirada')
+    fecha_creacion: Optional[datetime] = None
+    fecha_expiracion: Optional[datetime] = None
+
+
+class InvitacionListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    datos: List[InvitacionResponse]
+
+
+class InvitacionAceptar(BaseModel):
+    token: str = Field(..., description='Token de la invitación')
+    nombre_completo: str = Field(..., min_length=2, description='Nombre completo del usuario')
+    password: str = Field(..., min_length=8, description='Contraseña del usuario')
