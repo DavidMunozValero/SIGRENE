@@ -634,6 +634,52 @@ async def registrar_usuario(
     }
 
 
+@app.post("/api/v1/usuarios/registro-publico", status_code=status.HTTP_201_CREATED)
+async def registro_publico(usuario: UsuarioCreate):
+    """Public registration endpoint for director_tecnico.
+
+    This is the initial registration flow. The user registers as director_tecnico
+    and their account is auto-approved (no pending status needed since they
+    self-registered through the public form).
+
+    Only director_tecnico role is allowed via this endpoint.
+    All other roles must be invited through the invitation system.
+    """
+    if usuario.rol not in ["director_tecnico"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo se puede registrar como Director Técnico a través de este formulario"
+        )
+
+    db = DatabaseClient.get_db()
+    coleccion_usuarios = db["usuarios"]
+
+    if coleccion_usuarios.find_one({"email": usuario.email}):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El email ya está registrado en SIGRENE"
+        )
+
+    hashed_pwd = get_password_hash(usuario.password)
+
+    usuario_db = UsuarioInDB(
+        email=usuario.email,
+        nombre_completo=usuario.nombre_completo,
+        rol=usuario.rol,
+        nadadores_asignados=usuario.nadadores_asignados or [],
+        hashed_password=hashed_pwd,
+        estado_aprobacion="aprobado",
+        fecha_registro=datetime.utcnow()
+    )
+
+    coleccion_usuarios.insert_one(usuario_db.model_dump())
+
+    return {
+        "message": f"El usuario {usuario.email} ha sido creado y aprobado correctamente.",
+        "estado_aprobacion": "aprobado"
+    }
+
+
 @app.post("/api/v1/invitaciones/", status_code=status.HTTP_201_CREATED)
 async def crear_invitacion(
     invitacion: InvitacionCreate,
@@ -656,7 +702,9 @@ async def crear_invitacion(
     user_role = current_user.get("rol", "")
     invitador_email = current_user.get("sub")
 
-    if user_role == "director_tecnico":
+    if user_role == "superadmin":
+        pass
+    elif user_role == "director_tecnico":
         if invitacion.rol_asignado not in ["coach"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
