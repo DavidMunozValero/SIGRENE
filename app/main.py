@@ -610,7 +610,9 @@ async def registrar_usuario(
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
 
-    if coleccion_usuarios.find_one({"email": usuario.email}):
+    email_normalized = usuario.email.lower().strip()
+
+    if coleccion_usuarios.find_one({"email": email_normalized}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El email ya está registrado en SIGRENE"
@@ -619,7 +621,7 @@ async def registrar_usuario(
     hashed_pwd = get_password_hash(usuario.password)
 
     usuario_db = UsuarioInDB(
-        email=usuario.email,
+        email=email_normalized,
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
         nadadores_asignados=usuario.nadadores_asignados,
@@ -633,7 +635,7 @@ async def registrar_usuario(
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
     return {
-        "message": f"El usuario {usuario.email} ha sido creado y aprobado correctamente.",
+        "message": f"El usuario {email_normalized} ha sido creado y aprobado correctamente.",
         "estado_aprobacion": "aprobado"
     }
 
@@ -658,7 +660,9 @@ async def registro_publico(usuario: UsuarioCreate):
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
 
-    if coleccion_usuarios.find_one({"email": usuario.email}):
+    email_normalized = usuario.email.lower().strip()
+
+    if coleccion_usuarios.find_one({"email": email_normalized}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El email ya está registrado en SIGRENE"
@@ -667,7 +671,7 @@ async def registro_publico(usuario: UsuarioCreate):
     hashed_pwd = get_password_hash(usuario.password)
 
     usuario_db = UsuarioInDB(
-        email=usuario.email,
+        email=email_normalized,
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
         nadadores_asignados=usuario.nadadores_asignados or [],
@@ -679,7 +683,7 @@ async def registro_publico(usuario: UsuarioCreate):
     coleccion_usuarios.insert_one(usuario_db.model_dump())
 
     return {
-        "message": f"El usuario {usuario.email} ha sido creado y aprobado correctamente.",
+        "message": f"El usuario {email_normalized} ha sido creado y aprobado correctamente.",
         "estado_aprobacion": "aprobado"
     }
 
@@ -1270,7 +1274,8 @@ async def delete_usuario(
 ):
     """Delete a user completely from the database (admin only).
 
-    This is a hard delete - the user will be permanently removed.
+    This is a hard delete - the user will be permanently removed along with
+    all related data (swimmer assignments, training groups, invitations).
     """
     if current_user.get("rol") not in ["superadmin"]:
         raise HTTPException(
@@ -1278,8 +1283,9 @@ async def delete_usuario(
             detail="Solo los administradores pueden eliminar usuarios"
         )
 
-    # Prevent admin from deleting themselves
-    if current_user.get("sub") == email:
+    email_normalized = email.lower().strip()
+
+    if current_user.get("sub") == email_normalized:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No puedes eliminarte a ti mismo"
@@ -1288,17 +1294,38 @@ async def delete_usuario(
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
 
-    result = coleccion_usuarios.delete_one({"email": email})
-
-    if result.deleted_count == 0:
+    usuario = coleccion_usuarios.find_one({"email": email_normalized})
+    if not usuario:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
         )
 
+    coleccion_usuarios.delete_one({"email": email_normalized})
+
+    if coleccion_usuarios.find_one({"email": email_normalized}):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al eliminar el usuario de la base de datos"
+        )
+
+    if usuario.get("rol") == "coach":
+        db["nadadores"].update_many(
+            {"coach_id": email_normalized},
+            {"$set": {"coach_id": None}}
+        )
+        db["training_groups"].delete_many({"coach_id": email_normalized})
+
+    db["invitaciones"].delete_many({
+        "$or": [
+            {"email_invitado": email_normalized},
+            {"invitador_email": email_normalized}
+        ]
+    })
+
     return DeleteResponse(
-        message=f"Usuario {email} eliminado correctamente",
-        deleted_count=result.deleted_count
+        message=f"Usuario {email_normalized} eliminado correctamente",
+        deleted_count=1
     )
 
 
@@ -1401,8 +1428,10 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
 
     db = DatabaseClient.get_db()
 
+    email_normalized = form_data.username.lower().strip()
+
     # 1. Find user by email (OAuth2 uses the field 'username' by default)
-    usuario_db = db["usuarios"].find_one({"email": form_data.username})
+    usuario_db = db["usuarios"].find_one({"email": email_normalized})
 
     # 2. Verify existence and password match
     if not usuario_db or not verify_password(form_data.password, usuario_db["hashed_password"]):
@@ -1532,7 +1561,9 @@ async def request_password_recovery(request: PasswordRecoveryRequest):
     db = DatabaseClient.get_db()
     coleccion_usuarios = db["usuarios"]
 
-    usuario = coleccion_usuarios.find_one({"email": request.email})
+    email_normalized = request.email.lower().strip()
+
+    usuario = coleccion_usuarios.find_one({"email": email_normalized})
 
     if not usuario:
         return {"message": "Si el email existe en nuestra base de datos, recibirás un correo con las instrucciones para restablecer tu contraseña."}
