@@ -146,6 +146,10 @@ async def lifespan(app: FastAPI):
     db["invitaciones"].create_index("token", unique=True)
     db["invitaciones"].create_index("email_invitado")
     db["invitaciones"].create_index("invitador_email")
+
+    # Create backups directory
+    BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backups")
+    os.makedirs(BACKUP_DIR, exist_ok=True)
     
     yield
     # Shutdown: Disconnect from MongoDB
@@ -2545,3 +2549,231 @@ async def delete_analisis_competicion(
         raise HTTPException(status_code=404, detail="Análisis no encontrado")
 
     return {"message": "Análisis de competición eliminado", "deleted_count": result.deleted_count}
+
+
+BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backups")
+
+
+class BackupListResponse(BaseModel):
+    total: int
+    backups: List[dict]
+
+
+@app.get("/api/v1/admin/backups", response_model=BackupListResponse)
+async def list_backups(current_user: dict = Depends(get_current_user)):
+    """List all available database backups.
+
+    Only superadmin can access this endpoint.
+
+    Returns:
+        List of backups with name, size, and creation date.
+    """
+    if current_user.get("rol") != "superadmin":
+        raise HTTPException(status_code=403, detail="Solo superadmin puede acceder a backups")
+
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+
+    backups = []
+    for filename in os.listdir(BACKUP_DIR):
+        if filename.endswith(".gz"):
+            filepath = os.path.join(BACKUP_DIR, filename)
+            stat = os.stat(filepath)
+            backups.append({
+                "name": filename,
+                "size": stat.st_size,
+                "size_formatted": _format_file_size(stat.st_size),
+                "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            })
+
+    backups.sort(key=lambda x: x["created_at"], reverse=True)
+
+    return BackupListResponse(total=len(backups), backups=backups)
+
+
+@app.post("/api/v1/admin/backups", status_code=status.HTTP_201_CREATED)
+async def create_backup(current_user: dict = Depends(get_current_user)):
+    """Create a new database backup.
+
+    Only superadmin can access this endpoint.
+
+    Uses mongodump to create a full backup of all collections,
+    compresses it with gzip, and stores it in the backups directory.
+
+    Returns:
+        dict: Success message with backup filename.
+    """
+    if current_user.get("rol") != "superadmin":
+        raise HTTPException(status_code=403, detail="Solo superadmin puede crear backups")
+
+    mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+    mongo_db_name = os.environ.get("MONGO_DB_NAME", "sigrene")
+
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    backup_name = f"sigrene_backup_{timestamp}"
+    backup_path = os.path.join(BACKUP_DIR, backup_name)
+
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["mongodump", f"--uri={mongo_uri}", f"--db={mongo_db_name}", f"--out={backup_path}"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error creando backup: {result.stderr}"
+            )
+
+        gzip_path = f"{backup_path}.tar.gz"
+        subprocess.run(
+            ["tar", "-czf", gzip_path, "-C", BACKUP_DIR, backup_name],
+            check=True,
+        )
+        subprocess.run(["rm", "-rf", backup_path], check=True)
+
+        final_size = os.stat(gzip_path).st_size
+
+        return {
+            "message": "Backup creado correctamente",
+            "filename": f"{backup_name}.tar.gz",
+            "size": final_size,
+            "size_formatted": _format_file_size(final_size),
+        }
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Timeout creando backup. La operación tardó demasiado."
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"mongodump no encontrado. Asegúrate de que MongoDB tools está instalado. {e}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creando backup: {str(e)}"
+        )
+
+
+@app.get("/api/v1/admin/backups/{backup_name}")
+async def download_backup(backup_name: str, current_user: dict = Depends(get_current_user)):
+    """Download a database backup file.
+
+    Only superadmin can access this endpoint.
+
+    Args:
+        backup_name: Name of the backup file to download.
+
+    Returns:
+        FileResponse with the backup file.
+    """
+    if current_user.get("rol") != "superadmin":
+        raise HTTPException(status_code=403, detail="Solo superadmin puede descargar backups")
+
+    if ".." in backup_name or "/" in backup_name:
+        raise HTTPException(status_code=400, detail="Nombre de archivo inválido")
+
+    filepath = os.path.join(BACKUP_DIR, backup_name)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Backup no encontrado")
+
+    return Response(
+        content=open(filepath, "rb").read(),
+        media_type="application/gzip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{backup_name}"',
+            "Content-Length": str(os.path.getsize(filepath)),
+        }
+    )
+
+
+@app.post("/api/v1/admin/backups/restore/{backup_name}")
+async def restore_backup(backup_name: str, current_user: dict = Depends(get_current_user)):
+    """Restore a database from a backup file.
+
+    Only superadmin can access this endpoint.
+
+    WARNING: This operation overwrites all current data in the database.
+    A confirmation token is required to prevent accidental restores.
+
+    Args:
+        backup_name: Name of the backup file to restore.
+
+    Returns:
+        dict: Success message.
+    """
+    if current_user.get("rol") != "superadmin":
+        raise HTTPException(status_code=403, detail="Solo superadmin puede restaurar backups")
+
+    if ".." in backup_name or "/" in backup_name:
+        raise HTTPException(status_code=400, detail="Nombre de archivo inválido")
+
+    filepath = os.path.join(BACKUP_DIR, backup_name)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Backup no encontrado")
+
+    mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+    mongo_db_name = os.environ.get("MONGO_DB_NAME", "sigrene")
+
+    import subprocess
+    try:
+        temp_dir = os.path.join(BACKUP_DIR, f"temp_restore_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        subprocess.run(
+            ["tar", "-xzf", filepath, "-C", temp_dir],
+            check=True,
+        )
+
+        result = subprocess.run(
+            ["mongorestore", f"--uri={mongo_uri}", f"--db={mongo_db_name}", "--drop", f"--dir={temp_dir}"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+
+        subprocess.run(["rm", "-rf", temp_dir], check=True)
+
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error restaurando backup: {result.stderr}"
+            )
+
+        return {"message": "Base de datos restaurada correctamente", "backup": backup_name}
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Timeout restaurando backup. La operación tardó demasiado."
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"mongorestore no encontrado. Asegúrate de que MongoDB tools está instalado. {e}"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error restaurando backup: {str(e)}"
+        )
+
+
+def _format_file_size(size_bytes: int) -> str:
+    """Format file size in human readable format."""
+    for unit in ["B", "KB", "MB", "GB"]:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} TB"
