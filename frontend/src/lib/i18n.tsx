@@ -286,6 +286,7 @@ const translations: Record<Language, Record<string, string>> = {
     "app.users": "Usuarios",
     "app.pending": "Solicitudes Pendientes",
     "app.register_user": "Registrar Usuario",
+    "app.backups": "Backups",
     "app.preview": "Vista Previa",
     "app.dashboard": "Dashboard",
     "app.groups": "Grupos",
@@ -475,6 +476,25 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.invitations.cancel": "Cancelar",
     "admin.invitations.sending": "Enviando...",
     "admin.invitations.manage_users": "Gestionar Usuarios",
+
+    // Admin backups
+    "admin.backups.title_page": "Backups de Base de Datos",
+    "admin.backups.desc": "Gestiona copias de seguridad de la base de datos.",
+    "admin.backups.create": "Crear backup",
+    "admin.backups.create_desc": "Crea una copia de seguridad completa de todas las colecciones.",
+    "admin.backups.create_btn": "Crear backup",
+    "admin.backups.creating": "Creando...",
+    "admin.backups.available": "Backups disponibles",
+    "admin.backups.no_backups": "No hay backups disponibles",
+    "admin.backups.download": "Descargar",
+    "admin.backups.restore": "Restaurar",
+    "admin.backups.restoring": "Restaurando...",
+    "admin.backups.restore_confirm": "¿Restaurar este backup? Se sobrescribirán todos los datos actuales.",
+    "admin.backups.restore_final": "ATENCIÓN: Esta acción es irreversible. ¿Confirmas la restauración?",
+    "admin.backups.restore_success": "Base de datos restaurada correctamente",
+    "admin.backups.warning_title": "Aviso importante",
+    "admin.backups.warning_desc": "La restauración sobrescribe TODOS los datos actuales. Usa esta función con precaución.",
+    "admin.backups.back": "Volver al resumen",
 
     // Coach invitations
     "coach.invitations.title_page": "Invitaciones",
@@ -927,6 +947,7 @@ const translations: Record<Language, Record<string, string>> = {
     "app.history": "My history",
     "app.profile": "Profile",
     "app.invitations": "Invitations",
+    "app.backups": "Backups",
 
     // Admin index
     "admin.index.title": "Summary — Federation Admin",
@@ -1105,6 +1126,25 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.invitations.cancel": "Cancel",
     "admin.invitations.sending": "Sending...",
     "admin.invitations.manage_users": "Manage Users",
+
+    // Admin backups
+    "admin.backups.title_page": "Database Backups",
+    "admin.backups.desc": "Manage database backup copies.",
+    "admin.backups.create": "Create backup",
+    "admin.backups.create_desc": "Creates a full backup of all collections.",
+    "admin.backups.create_btn": "Create backup",
+    "admin.backups.creating": "Creating...",
+    "admin.backups.available": "Available backups",
+    "admin.backups.no_backups": "No backups available",
+    "admin.backups.download": "Download",
+    "admin.backups.restore": "Restore",
+    "admin.backups.restoring": "Restoring...",
+    "admin.backups.restore_confirm": "Restore this backup? All current data will be overwritten.",
+    "admin.backups.restore_final": "WARNING: This action is irreversible. Do you confirm the restoration?",
+    "admin.backups.restore_success": "Database restored successfully",
+    "admin.backups.warning_title": "Important notice",
+    "admin.backups.warning_desc": "Restoration overwrites ALL current data. Use this feature with caution.",
+    "admin.backups.back": "Back to summary",
 
     // Coach invitations
     "coach.invitations.title_page": "Invitations",
