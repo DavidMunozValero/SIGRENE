@@ -240,3 +240,50 @@ def account_rejected_email(
         html_body=html,
         text_body=f"Hola {name}, lamentamos informarte que tu solicitud ha sido rechazada.",
     )
+
+
+def invitation_email(
+    email: str,
+    name: str,
+    inviting_organization: str,
+    role_assigned: str,
+    invitation_url: str,
+    expires_days: int = 7,
+) -> EmailMessage:
+    """Template for invitation emails."""
+    role_display = {
+        "director_tecnico": "Director Técnico",
+        "coach": "Entrenador",
+        "swimmer": "Nadador",
+    }.get(role_assigned, role_assigned)
+
+    html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #004d98; color: white; padding: 20px; text-align: center;">
+            <h1>Invitación a SIGRENE</h1>
+        </div>
+        <div style="padding: 20px; background: #f9f9f9;">
+            <p>Hola {name},</p>
+            <p>Has sido invitado/a a unirte a SIGRENE como <strong>{role_display}</strong> por <strong>{inviting_organization}</strong>.</p>
+            <p>Para aceptar la invitación y crear tu cuenta, haz clic en el siguiente enlace:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{invitation_url}" style="background: #004d98; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Aceptar invitación
+                </a>
+            </div>
+            <p style="color: #666; font-size: 14px;">Este enlace expira en {expires_days} días.</p>
+            <p style="color: #666; font-size: 14px;">Si no solicitaste esta invitación, puedes ignorar este email.</p>
+        </div>
+        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p>Este es un email automático de SIGRENE. No respondas a este mensaje.</p>
+        </div>
+    </body>
+    </html>
+    """
+    return EmailMessage(
+        to=[email],
+        subject=f"[SIGRENE] Invitación como {role_display}",
+        html_body=html,
+        text_body=f"Hola {name}, has sido invitado a SIGRENE como {role_display}. Acepta tu invitación en: {invitation_url}\nEste enlace expira en {expires_days} días.",
+    )
